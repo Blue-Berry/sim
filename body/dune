@@ -1,0 +1,12 @@
+(library
+ (name body)
+ (libraries core owl)
+ (modules body))
+
+(library
+ (name body_test)
+ (modules body_test)
+ (libraries body core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

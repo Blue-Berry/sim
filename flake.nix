@@ -54,6 +54,7 @@
               ppx_jane
               graphics
               core_bench
+              bisect_ppx
             ];
           };
 

@@ -7,18 +7,22 @@ module Physics = struct
     ; y : float
     ; z : float
     }
+  [@@deriving sexp_of]
 
   type vec =
     { x : float
     ; y : float
     ; z : float
     }
+  [@@deriving sexp_of]
 
   let displace ({ x; y; z } : point) ({ x = dx; y = dy; z = dz } : vec) : point =
     { x = x +. dx; y = y +. dy; z = z +. dz }
   ;;
 
   let mag_sq ({ x; y; z } : vec) : float = sqr x +. sqr y +. sqr z
+
+  (*   TODO: Fast inverse square root *)
   let mag v = sqrt (mag_sq v)
   let ( *$ ) c ({ x; y; z } : vec) = { x = x *. c; y = y *. c; z = z *. c }
   let unit_vec (v : vec) : vec = 1.0 /. mag v *$ v [@@inline]
@@ -72,6 +76,7 @@ type t =
   ; mutable pos : point
   ; mutable vel : vec
   }
+[@@deriving sexp_of]
 
 let step b a t =
   let pos' = new_position b.pos t b.vel a in
@@ -83,4 +88,19 @@ let step b a t =
 let accelerate_body (bodies : t list) (pos1 : point) : vec =
   let combine_accelerations (acc : vec) (b : t) : vec = acc_on pos1 b.pos b.mass +$ acc in
   List.fold_left ~init:zero ~f:combine_accelerations bodies
+;;
+
+let accelerations (bodies : t list) : vec list =
+  let calc_acc (b : t) : vec =
+    let bodies = List.filter ~f:(fun b' -> not @@ phys_equal b.pos b'.pos) bodies in
+    accelerate_body bodies b.pos
+  in
+  List.map ~f:calc_acc bodies
+;;
+
+let step_bodies (bodies : t list) (dt : float) : unit =
+  let accels = accelerations bodies in
+  match List.iter2 accels bodies ~f:(fun a b -> step b a dt) with
+  | List.Or_unequal_lengths.Ok () -> ()
+  | List.Or_unequal_lengths.Unequal_lengths -> failwith "Unequal lengths"
 ;;

@@ -31,6 +31,7 @@
           default = mkShell {
             inputsFrom = [self'.packages.default];
             buildInputs = with ocamlPackages; [
+                camlzip
               utop
               ocamlformat
               # patch ocaml-lsp so that inlay hints dont hide ghost values
@@ -54,7 +55,6 @@
               ppx_jane
               graphics
               core_bench
-              bisect_ppx
             ];
           };
 

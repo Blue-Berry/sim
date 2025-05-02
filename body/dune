@@ -3,9 +3,7 @@
  (libraries core owl)
  (modules body)
  (preprocess
-  (pps ppx_jane))
- (instrumentation
-  (backend bisect_ppx)))
+  (pps ppx_jane)))
 
 (library
  (name body_test)
@@ -13,6 +11,4 @@
  (libraries body core)
  (inline_tests)
  (preprocess
-  (pps ppx_jane))
- (instrumentation
-  (backend bisect_ppx)))
+  (pps ppx_jane)))

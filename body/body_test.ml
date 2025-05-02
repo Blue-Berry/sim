@@ -6,209 +6,139 @@ let%expect_test _ =
 open! Core
 open Body
 
-let%expect_test _ =
-  Physics.displace { x = 1.; y = 1.; z = 1. } { x = 1.; y = 1.; z = 1. }
-  |> Physics.sexp_of_point
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 2) (y 2) (z 2)) |}]
+let v a b c =
+  let open Owl.Mat in
+  let v1 = vector 3 in
+  v1.%{0, 0} <- a;
+  v1.%{0, 1} <- b;
+  v1.%{0, 2} <- c;
+  v1
 ;;
 
 let%expect_test _ =
-  Physics.mag_sq { x = 1.; y = 1.; z = 1. } |> Float.to_string |> print_endline;
+  Physics.displace (v 1. 1. 1.) (v 1. 1. 1.) |> Physics.print;
+  [%expect {| x: 2.0000 y: 2.0000 z: 2.0000 |}]
+;;
+
+let%expect_test _ =
+  Physics.mag_sq (v 1. 1. 1.) |> Float.to_string |> print_endline;
   [%expect {| 3. |}]
 ;;
 
 let%expect_test _ =
-  Physics.mag { x = 1.; y = 0.; z = 0. } |> Float.to_string |> print_endline;
+  Physics.mag (v 1. 0. 0.) |> Float.to_string |> print_endline;
   [%expect {| 1. |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  Physics.( *$ ) 2.0 { x = 1.; y = 1.; z = 1. }
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 2) (y 2) (z 2)) |}]
-;;
-
-let%expect_test _ =
-  let open Physics in
-  unit_vec { x = 3.; y = 3.; z = 3. }
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
+  unit_vec (v 3. 3. 3.) |> Physics.print;
   [%expect
-    {| ((x 0.57735026918962573) (y 0.57735026918962573) (z 0.57735026918962573)) |}]
+    {| x: 0.5774 y: 0.5774 z: 0.5774 |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  unit_vec { x = 3.; y = 3.; z = 3. } |> mag |> Float.to_string |> print_endline;
+  unit_vec (v 3. 3. 3.) |> mag |> Float.to_string |> print_endline;
   [%expect {| 1. |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  { x = 0.; y = 0.; z = 1. } --> { x = 1.; y = 1.; z = 1. }
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 1) (y 1) (z 0)) |}]
+  let v1 = v 0. 0. 1.
+  and v2 = v 1. 1. 1. in
+  v1 --> v2 |> print;
+  [%expect {| x: 1.0000 y: 1.0000 z: 0.0000 |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  { x = 0.; y = 0.; z = 1. } +$ { x = 1.; y = 1.; z = 1. }
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 1) (y 1) (z 2)) |}]
-;;
-
-let%expect_test _ =
-  let open Physics in
-  close_enough { x = 1.; y = 1.; z = 1.00000001 } { x = 1.; y = 1.; z = 1. }
-  |> Bool.to_string
-  |> print_endline;
+  close_enough (v 1. 1. 1.00000001) (v 1. 1. 1.) |> Bool.to_string |> print_endline;
   [%expect {| true |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
   let open Float in
-  acc_on { x = 0.; y = 0.; z = 0. } { x = 1.; y = 1.; z = 1. } (1. / g)
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
+  acc_on (v 0. 0. 0.) (v 1. 1. 1.) (1. / g) |> print;
   [%expect
-    {| ((x 0.19245008972987526) (y 0.19245008972987526) (z 0.19245008972987526)) |}];
-  acc_on { x = 0.; y = 0.; z = 0. } { x = 1.; y = 0.; z = 0. } (1. / g)
-  |> mag
-  |> Float.to_string
-  |> print_endline;
+    {| x: 0.1925 y: 0.1925 z: 0.1925 |}];
+  acc_on (v 0. 0. 0.) (v 1. 0. 0.) (1. / g) |> mag |> Float.to_string |> print_endline;
   [%expect {| 1. |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  new_position
-    { x = 0.; y = 0.; z = 0. }
-    1.0
-    { x = 1.; y = 1.; z = 1. }
-    { x = 0.; y = 0.; z = 0. }
-  |> sexp_of_point
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 1) (y 1) (z 1)) |}]
+  new_position (v 0. 0. 0.) 1.0 (v 1. 1. 1.) (v 0. 0. 0.) |> print;
+  [%expect {| x: 1.0000 y: 1.0000 z: 1.0000 |}]
 ;;
 
 let%expect_test _ =
   let open Physics in
-  new_velocity { x = 0.; y = 0.; z = 0. } { x = 1.; y = 1.; z = 1. } 1.0
-  |> sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect {| ((x 1) (y 1) (z 1)) |}]
+  new_velocity (v 0. 0. 0.) (v 1. 1. 1.) 1.0 |> print;
+  [%expect {| x: 1.0000 y: 1.0000 z: 1.0000 |}]
 ;;
 
 let%expect_test _ =
-  let b : Body.t =
-    Body.{ mass = 1.; pos = { x = 0.; y = 0.; z = 0. }; vel = { x = 1.; y = 0.; z = 0. } }
-  in
-  step b { x = 0.; y = 0.; z = 0. } 1.0;
-  b |> sexp_of_t |> Sexp.to_string_hum |> print_endline;
-  [%expect {| ((mass 1) (pos ((x 1) (y 0) (z 0))) (vel ((x 1) (y 0) (z 0)))) |}]
-;;
-
-let%expect_test _ =
-  let b : Body.t =
-    Body.{ mass = 1.; pos = { x = 0.; y = 0.; z = 0. }; vel = { x = 1.; y = 0.; z = 0. } }
-  in
-  accelerate_body [ b ] { x = 1.; y = 1.; z = 1. }
-  |> Physics.sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
-  [%expect
-    {|
-    ((x -1.2844657848823119E-11) (y -1.2844657848823119E-11)
-     (z -1.2844657848823119E-11))
+  let b : Body.t = Body.{ mass = 1.; pos = v 0. 0. 0.; vel = v 1. 0. 0. } in
+  step b (v 0. 0. 0.) 1.0;
+  b |> print;
+  [%expect {|
+    M: 1.00
+    P: x: 1.0000 y: 0.0000 z: 0.0000
+    V: x: 1.0000 y: 0.0000 z: 0.0000
     |}]
 ;;
 
-let%expect_test _ =
-  let b1 : Body.t =
-    Body.
-      { mass = 100000.
-      ; pos = { x = 0.; y = 0.; z = 0. }
-      ; vel = { x = 1.; y = 0.; z = 0. }
-      }
-  in
-  let b2 : Body.t =
-    Body.
-      { mass = 100000.
-      ; pos = { x = 1.; y = 1.; z = 1. }
-      ; vel = { x = 1.; y = 0.; z = 0. }
-      }
-  in
-  let b3 : Body.t =
-    Body.
-      { mass = 100000.
-      ; pos = { x = 2.; y = 2.; z = 2. }
-      ; vel = { x = 1.; y = 0.; z = 0. }
-      }
-  in
+let%expect_test "accelerate_body" =
+  let b : Body.t = Body.{ mass = 1.0E12; pos = v 0. 0. 0.; vel = v 1. 0. 0. } in
+  accelerate_body [ b ] (v 1. 1. 1.) |> Physics.print;
+  [%expect
+    {| x: -12.8447 y: -12.8447 z: -12.8447 |}]
+;;
+
+let%expect_test "accelerations" =
+  let b1 : Body.t = Body.{ mass = 100000.0E12; pos = v 0. 0. 0.; vel = v 1. 0. 0. } in
+  let b2 : Body.t = Body.{ mass = 100000.0E12; pos = v 1. 1. 1.; vel = v 1. 0. 0. } in
+  let b3 : Body.t = Body.{ mass = 100000.0E12; pos = v 2. 2. 2.; vel = v 1. 0. 0. } in
   accelerations [ b1; b2; b3 ]
-  |> sexp_of_list Physics.sexp_of_vec
-  |> Sexp.to_string_hum
-  |> print_endline;
+  |> List.iter ~f:Physics.print;
   [%expect
     {|
-    (((x 1.6055822311028897E-06) (y 1.6055822311028897E-06)
-      (z 1.6055822311028897E-06))
-     ((x 0) (y 0) (z 0))
-     ((x -1.6055822311028897E-06) (y -1.6055822311028897E-06)
-      (z -1.6055822311028897E-06)))
+    x: 1605582.2311 y: 1605582.2311 z: 1605582.2311
+    x: 0.0000 y: 0.0000 z: 0.0000
+    x: -1605582.2311 y: -1605582.2311 z: -1605582.2311
     |}]
 ;;
 
-let%expect_test _ =
+let%expect_test "step_bodies" =
   let bs : t list =
-    [ { mass = 100000.
-      ; pos = { x = 0.; y = 0.; z = 0. }
-      ; vel = { x = 0.; y = 0.; z = 0. }
+    [ { mass = 100000.0E10
+      ; pos = (v  0. 0. 0. )
+      ; vel = (v  0. 0. 0. )
       }
-    ; { mass = 100000.
-      ; pos = { x = 1.; y = 1.; z = 1. }
-      ; vel = { x = 0.; y = 0.; z = 0. }
+    ; { mass = 100000.0E10
+      ; pos = (v  1. 1. 1. )
+      ; vel = (v  0. 0. 0. )
       }
-    ; { mass = 100000.
-      ; pos = { x = 2.; y = 2.; z = 2. }
-      ; vel = { x = 0.; y = 0.; z = 0. }
+    ; { mass = 100000.0E10
+      ; pos = (v  2. 2. 2. )
+      ; vel = (v  0. 0. 0. )
       }
     ]
   in
   step_bodies bs 1.;
-  bs
-  |> sexp_of_list sexp_of_t
-  |> Sexp.to_string_hum
-  |> print_endline;
+  bs |> List.iter ~f:print;
   [%expect
     {|
-    (((mass 100000)
-      (pos
-       ((x 8.0279111555144484E-07) (y 8.0279111555144484E-07)
-        (z 8.0279111555144484E-07)))
-      (vel
-       ((x 1.6055822311028897E-06) (y 1.6055822311028897E-06)
-        (z 1.6055822311028897E-06))))
-     ((mass 100000) (pos ((x 1) (y 1) (z 1))) (vel ((x 0) (y 0) (z 0))))
-     ((mass 100000)
-      (pos
-       ((x 1.9999991972088844) (y 1.9999991972088844) (z 1.9999991972088844)))
-      (vel
-       ((x -1.6055822311028897E-06) (y -1.6055822311028897E-06)
-        (z -1.6055822311028897E-06)))))
+    M: 1000000000000000.00
+    P: x: 8027.9112 y: 8027.9112 z: 8027.9112
+    V: x: 16055.8223 y: 16055.8223 z: 16055.8223
+    M: 1000000000000000.00
+    P: x: 1.0000 y: 1.0000 z: 1.0000
+    V: x: 0.0000 y: 0.0000 z: 0.0000
+    M: 1000000000000000.00
+    P: x: -8025.9112 y: -8025.9112 z: -8025.9112
+    V: x: -16055.8223 y: -16055.8223 z: -16055.8223
     |}]
 ;;

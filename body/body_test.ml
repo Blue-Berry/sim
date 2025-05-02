@@ -16,7 +16,9 @@ let v a b c =
 ;;
 
 let%expect_test "displace" =
-  Physics.displace (v 1. 1. 1.) (v 1. 1. 1.) |> Physics.print;
+  let u = v 1. 1. 1. in
+  Physics.displace u (v 1. 1. 1.);
+  u |> Physics.print;
   [%expect {| x: 2.0000 y: 2.0000 z: 2.0000 |}]
 ;;
 
@@ -67,13 +69,17 @@ let%expect_test "acc_on" =
 
 let%expect_test "new_position" =
   let open Physics in
-  new_position (v 0. 0. 0.) 1.0 (v 1. 1. 1.) (v 0. 0. 0.) |> print;
+  let u = v 0. 0. 0. in
+  new_position ~pos:u ~t:1.0 ~v:(v 1. 1. 1.) ~a:(v 0. 0. 0.);
+  u |> print;
   [%expect {| x: 1.0000 y: 1.0000 z: 1.0000 |}]
 ;;
 
 let%expect_test "new_velocity" =
   let open Physics in
-  new_velocity (v 0. 0. 0.) (v 1. 1. 1.) 1.0 |> print;
+  let u = v 0. 0. 0. in
+  new_velocity ~v:u ~a:(v 1. 1. 1.) ~t:1.0;
+  u |> print;
   [%expect {| x: 1.0000 y: 1.0000 z: 1.0000 |}]
 ;;
 
@@ -144,5 +150,3 @@ let%expect_test "orthogonal_vector" =
   |> print_endline;
   [%expect {| 0. |}]
 ;;
-
-

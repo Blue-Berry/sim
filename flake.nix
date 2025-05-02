@@ -40,6 +40,7 @@
                   ./inlay-hints.patch
                 ];
               }))
+              pkgs.cargo-flamegraph
             ];
           };
         };

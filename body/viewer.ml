@@ -53,7 +53,7 @@ let run (bodies : Body.t list) (timestep : float) : unit =
        * and a held key will exit the program. *)
     if should_pause () then ignore (wait_next_event [ Key_pressed ]);
     ignore (wait_next_event [ Poll ]);
-    Unix.sleepf 0.1;
+    (* Unix.sleepf 0.1; *)
     let sun = List.hd bodies in
     let open Body.Physics in
     let x = sun.pos.%{`x} 
@@ -61,11 +61,6 @@ let run (bodies : Body.t list) (timestep : float) : unit =
     Printf.printf "sun: %f %f; mass: %f\n" x y sun.mass
   done
 
-(* You can run the colliding system simulation by replacing the 
- * command below with:  
- *    ;; run collision step_slow
- * But, it will be too slow.
-*)
 ;;
 
 run Body.Utils.planets step_slow

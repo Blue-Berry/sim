@@ -17,7 +17,7 @@ module Physics = struct
 
   let pp ppf v = Format.fprintf ppf "x: %.4f y: %.4f z: %.4f" v.%{`x} v.%{`y} v.%{`z}
   let print v = Format.fprintf Format.std_formatter "%a\n" pp v
-  let displace (p : point) (v : vec) : point = p + v
+  let displace (p : point) (v : vec) = add_ p v
 
   (* let mag_sq v : float = v |> sqr |> sum_cols |> trace *)
   let mag_sq : vec -> float = fun v -> v |> sqr |> sum_cols |> trace
@@ -54,12 +54,12 @@ module Physics = struct
   ;;
 
   (** [new_position] [pos] [t] [v] [a] New position of body [pos] after time [t] with velocity [v] and acceleration [a] *)
-  let new_position (pos : point) (t : float) (v : vec) (a : vec) : point =
+  let new_position ~(pos : point) ~(t : float) ~(v : vec) ~(a : vec) =
     (*   TODO: replace with runga kutta *)
     displace pos ((t $* v) + (0.5 *. t *. t $* a))
   ;;
 
-  let new_velocity (v : vec) (a : vec) (t : float) : vec = v + (t $* a)
+  let new_velocity ~(v : vec) ~(a : vec) ~(t : float) : unit = add_ v (t $* a)
 end
 
 open Physics
@@ -78,10 +78,8 @@ let pp ppf b =
 let print b = pp Format.std_formatter b
 
 let step b a t =
-  let pos' = new_position b.pos t b.vel a in
-  let vel' = new_velocity b.vel a t in
-  b.pos <- pos';
-  b.vel <- vel'
+  new_position ~pos:b.pos ~t ~v:b.vel ~a;
+  new_velocity ~v:b.vel ~a ~t
 ;;
 
 let accelerate_body (bodies : t list) pos1 : vec =
@@ -161,7 +159,7 @@ module Utils = struct
 
   (* Displace all of the bodies in a list by a given vector *)
   let displace_bodies (bodies : t list) (v : vec) : unit =
-    List.iter ~f:(fun b -> b.pos <- displace b.pos v) bodies
+    List.iter ~f:(fun b -> displace b.pos v) bodies
   ;;
 
   (* Add a fixed velocity vector to each of the bodies' velocities.
@@ -222,5 +220,15 @@ module Utils = struct
     { mass = 8.69e25; pos = v (-2870990000.0) 0.0 0.; vel = v 0.0 (-200000.0) 0. }
   ;;
 
-  let planets = [ star sun_mass; mars (); jupiter (); saturn (); uranus (); mercury (); venus (); earth (); ]
+  let planets =
+    [ star sun_mass
+    ; mars ()
+    ; jupiter ()
+    ; saturn ()
+    ; uranus ()
+    ; mercury ()
+    ; venus ()
+    ; earth ()
+    ]
+  ;;
 end

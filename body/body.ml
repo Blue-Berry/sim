@@ -8,10 +8,14 @@ module Physics = struct
   type point = Owl.Mat.mat
   type vec = Owl.Mat.mat
 
-  let pp ppf v =
-    Format.fprintf ppf "x: %.4f y: %.4f z: %.4f" v.%{0, 0} v.%{0, 1} v.%{0, 2}
+  let ( .%{} ) x dim =
+    match dim with
+    | `x -> Mat.( .%{} ) x (0, 0)
+    | `y -> Mat.( .%{} ) x (0, 1)
+    | `z -> Mat.( .%{} ) x (0, 2)
   ;;
 
+  let pp ppf v = Format.fprintf ppf "x: %.4f y: %.4f z: %.4f" v.%{`x} v.%{`y} v.%{`z}
   let print v = Format.fprintf Format.std_formatter "%a\n" pp v
   let displace (p : point) (v : vec) : point = p + v
 
@@ -20,7 +24,13 @@ module Physics = struct
 
   (*   TODO: Fast inverse square root *)
   let mag v = Maths.sqrt (mag_sq v)
-  let unit_vec (v : vec) : vec = 1.0 /. mag v $* v [@@inline]
+
+  (* let unit_vec (v : vec) : vec = 1.0 /. mag v $* v *)
+  let vec_norm (v : vec) : vec =
+    let norm = Linalg.D.norm v in
+    v /$ norm
+  ;;
+
   let ( --> ) (v1 : point) (v2 : point) : vec = v2 - v1
   let zero : vec = zeros 1 3
 
@@ -39,7 +49,7 @@ module Physics = struct
       let d = p1 --> p2 in
       let r = mag_sq d in
       let aMag = g *. m2 /. r in
-      let aDir = unit_vec d in
+      let aDir = vec_norm d in
       aMag $* aDir
   ;;
 
@@ -96,6 +106,16 @@ let step_bodies (bodies : t list) (dt : float) : unit =
 ;;
 
 module Utils = struct
+  let v a b c =
+    let open Owl.Mat in
+    let v1 = vector 3 in
+    v1.%{0, 0} <- a;
+    v1.%{0, 1} <- b;
+    v1.%{0, 2} <- c;
+    v1
+  ;;
+
+  let dist = 4000000000.0
   let orbital_velocity ~m1 ~m2 ~r = sqrt (m2 *. m2 *. g /. ((m1 +. m2) *. r))
 
   let gen_dist (d : float) : float =
@@ -105,24 +125,102 @@ module Utils = struct
     loop iter 0.0 -. (d /. 2.)
   ;;
 
-  (* calculate the tangent vector to a circle centered at the origin
-   at the point p *)
-  (* let tangent_vector ({ x; y; z } : Physics.point) : vec = *)
-  (*   let theta = atan2 x y in *)
-  (*   let vx = 0. -. cos theta in *)
-  (*   let vy = sin theta in *)
-  (* ;; *)
-end
+  let orthogonal_vector (v : Owl.Mat.mat) : Owl.Mat.mat =
+    let open Owl.Mat in
+    (*     get the nullspace of v *)
+    let nullspace = Owl.Linalg.D.null v |> to_cols in
+    assert (Int.equal (Array.length nullspace) 2);
+    let u1 = nullspace.(0) |> transpose in
+    let u2 = nullspace.(1) |> transpose in
+    let a = Random.float 10. in
+    let b = Random.float 10. in
+    (a $* u1) + (b $* u2) |> Physics.vec_norm
+  ;;
 
-let orthogonal_vector (v : Owl.Mat.mat) : Owl.Mat.mat =
-  let open Owl.Mat in
-  (*     get the nullspace of v *)
-  let nullspace = Owl.Linalg.D.null v |> to_cols in
-  assert (Int.equal (Array.length nullspace) 2);
-  let u1 = nullspace.(0) in
-  let u2 = nullspace.(1) in
-  let a = Random.float 10. in
-  let b = Random.float 10. in
-  (* TODO: normalize *)
-  (a $* u1) + (b $* u2)
-;;
+  (* Make a list of n bodies with random masses, distributed around
+   a central star. Initialize their starting velocities to put
+   them into circular orbits. *)
+  let mk_lots (star_mass : float) (n : int) : t list =
+    let _ = Random.init 17 in
+    let star m = { mass = m; pos = v 0. 0. 0.; vel = v 0. 0. 0. } in
+    let mk_one () : t =
+      let d = dist *. 2. in
+      let mass = Random.float 1000.0 *. 1e13 in
+      let x = gen_dist d in
+      let y = gen_dist d in
+      let z = gen_dist d in
+      let p = v x y z in
+      let r = Physics.mag p in
+      let v = orthogonal_vector p in
+      let velocity = orbital_velocity ~m1:mass ~m2:star_mass ~r in
+      { mass; pos = p; vel = Owl.Mat.( $* ) velocity v }
+    in
+    let rec loop n acc = if n = 0 then acc else loop (n - 1) (mk_one () :: acc) in
+    loop n [ star star_mass ]
+  ;;
+
+  (* Displace all of the bodies in a list by a given vector *)
+  let displace_bodies (bodies : t list) (v : vec) : unit =
+    List.iter ~f:(fun b -> b.pos <- displace b.pos v) bodies
+  ;;
+
+  (* Add a fixed velocity vector to each of the bodies' velocities.
+   (This sets an entire collection of bodies moving at a constant
+   velocity.) *)
+  let add_velocity (bodies : t list) (v : vec) : unit =
+    let open Owl.Mat in
+    List.iter ~f:(fun b -> b.vel <- b.vel + v) bodies
+  ;;
+
+  let collision : t list =
+    let sun_mass = 2.0e30 in
+    let star_mass = sun_mass *. 0.1 in
+    let solar1 = mk_lots sun_mass 10000 in
+    let solar2 = mk_lots star_mass 3000 in
+    let disp1 = v (dist /. 4.) 0.0 0. in
+    let disp2 = v (0.0 -. (dist /. 4.)) (0.0 -. (dist /. 4.)) 0. in
+    let diff = disp1 --> disp2 in
+    let v2 =
+      Owl.Mat.( $* )
+        (orbital_velocity ~m1:star_mass ~m2:sun_mass ~r:(mag diff) *. 0.9)
+        (orthogonal_vector diff)
+    in
+    displace_bodies solar1 disp1;
+    displace_bodies solar2 disp2;
+    add_velocity solar2 v2;
+    solar2 @ solar1
+  ;;
+
+  let sun_mass = 2.0e30
+  let star m = { mass = m; pos = v 0. 0. 0.; vel = v 0. 0. 0. }
+
+  let mercury () : t =
+    { mass = 3.30e23; pos = v 57910000.0 0. 0.; vel = v 9000.0 9000.0 0. }
+  ;;
+
+  let venus () : t =
+    { mass = 4.87e24; pos = v 0.0 108200000.0 0.; vel = v (-9000.0) 0.0 0. }
+  ;;
+
+  let earth () : t =
+    { mass = 5.98e24; pos = v (-149600000.0) 0.0 0.; vel = v 0.0 (-9000.0) 0. }
+  ;;
+
+  let mars () : t =
+    { mass = 6.42e23; pos = v 0.0 (-227940000.0) 0.; vel = v 600000.0 0.0 0. }
+  ;;
+
+  let jupiter () : t =
+    { mass = 1.90e27; pos = v 778330000.0 0.0 0.; vel = v 0.0 450000.0 0. }
+  ;;
+
+  let saturn () : t =
+    { mass = 5.69e26; pos = v 0.0 1426940000.0 0.; vel = v (-300000.0) 0.0 0. }
+  ;;
+
+  let uranus () : t =
+    { mass = 8.69e25; pos = v (-2870990000.0) 0.0 0.; vel = v 0.0 (-200000.0) 0. }
+  ;;
+
+  let planets = [ star sun_mass; mars (); jupiter (); saturn (); uranus (); mercury (); venus (); earth (); ]
+end

@@ -12,3 +12,8 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
+
+(executable
+ (name viewer)
+ (modules viewer)
+ (libraries graphics unix body))

@@ -19,7 +19,7 @@ let%expect_test "octant_bb" =
   print_s [%sexp (Bb.octant_bb bb Bb.O7 : Bb.t)];
   [%expect {| ((x_min 0) (x_max 1) (y_min -1) (y_max 0) (z_min -1) (z_max 0)) |}];
   print_s [%sexp (Bb.octant_bb bb Bb.O8 : Bb.t)];
-  [%expect {| ((x_min -1) (x_max 0) (y_min -1) (y_max 0) (z_min -1) (z_max 0)) |}];
+  [%expect {| ((x_min -1) (x_max 0) (y_min -1) (y_max 0) (z_min -1) (z_max 0)) |}]
 ;;
 
 let%expect_test "parent_bb" =
@@ -54,4 +54,24 @@ let%expect_test "parent_bb" =
   print_s [%sexp (Bb.parent_bb bb Bb.O7 : Bb.t)];
   [%expect {| ((x_min -3) (x_max 1) (y_min -1) (y_max 3) (z_min -1) (z_max 3)) |}];
   print_s [%sexp (Bb.parent_bb bb Bb.O8 : Bb.t)];
-  [%expect {| ((x_min -1) (x_max 3) (y_min -1) (y_max 3) (z_min -1) (z_max 3)) |}];
+  [%expect {| ((x_min -1) (x_max 3) (y_min -1) (y_max 3) (z_min -1) (z_max 3)) |}]
+;;
+
+let%expect_test "octant_of_point" =
+  print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 0.5 0.5) bb : Bb.octant)];
+  [%expect {| O1 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) 0.5 0.5) bb : Bb.octant)];
+  [%expect {| O2 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 (-0.5) 0.5) bb : Bb.octant)];
+  [%expect {| O3 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) (-0.5) 0.5) bb : Bb.octant)];
+  [%expect {| O4 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 0.5 (-0.5)) bb : Bb.octant)];
+  [%expect {| O5 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) 0.5 (-0.5)) bb : Bb.octant)];
+  [%expect {| O6 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 (-0.5) (-0.5)) bb : Bb.octant)];
+  [%expect {| O7 |}];
+  print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) (-0.5) (-0.5)) bb : Bb.octant)];
+  [%expect {| O8 |}]
+;;

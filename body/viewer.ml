@@ -2,7 +2,6 @@ open Graphics
 open Body
 
 let step_slow : float = 50.0
-
 let dim = 1000
 let dist = 4000000000.0
 
@@ -20,7 +19,8 @@ let draw_centroid (m : float) (x : float) (y : float) (c : color) : unit =
 
 let draw_body (b : Body.t) : unit =
   let open Body.Physics in
-  draw_centroid b.mass (b.pos.%{`x}) (b.pos.%{`y}) white
+  draw_centroid b.mass b.pos.%{`x} b.pos.%{`y} white
+;;
 
 (* You can configure the program to run for a given number
    of frames before pausing. *)
@@ -56,11 +56,10 @@ let run (bodies : Body.t list) (timestep : float) : unit =
     (* Unix.sleepf 0.1; *)
     let sun = List.hd bodies in
     let open Body.Physics in
-    let x = sun.pos.%{`x} 
+    let x = sun.pos.%{`x}
     and y = sun.pos.%{`y} in
     Printf.printf "sun: %f %f; mass: %f\n" x y sun.mass
   done
-
 ;;
 
 run Body.Utils.planets step_slow

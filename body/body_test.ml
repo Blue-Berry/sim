@@ -6,14 +6,7 @@ let%expect_test _ =
 open! Core
 open Body
 
-let v a b c =
-  let open Owl.Mat in
-  let v1 = vector 3 in
-  v1.%{0, 0} <- a;
-  v1.%{0, 1} <- b;
-  v1.%{0, 2} <- c;
-  v1
-;;
+let v = Physics.vec
 
 let%expect_test "displace" =
   let u = v 1. 1. 1. in

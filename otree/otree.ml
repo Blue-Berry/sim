@@ -1,9 +1,10 @@
 open! Core
+module Physics = Body.Physics
 
 (* Centroid *)
 module C = struct
   type t =
-    { p : Body.Physics.point
+    { p : Physics.point
     ; m : float
     }
 end
@@ -17,7 +18,8 @@ module Bb = struct
     ; y_max : float
     ; z_min : float
     ; z_max : float
-    } [@@deriving sexp_of]
+    }
+  [@@deriving sexp_of]
 
   type octant =
     (* xyz *)
@@ -29,7 +31,7 @@ module Bb = struct
     | O6 (* -+- *)
     | O7 (* +-- *)
     | O8 (* --- *)
-    [@@deriving sexp_of]
+  [@@deriving sexp_of]
 
   let octant_of_point (p : Body.Physics.point) (bb : t) : octant =
     let open Body.Physics in

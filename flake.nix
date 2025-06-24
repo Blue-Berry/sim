@@ -11,17 +11,11 @@
       systems = ["x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin"];
 
       perSystem = {
-        config,
         self',
-        inputs',
         pkgs,
-        system,
         ...
       }: let
-        inherit (pkgs) dockerTools mkShell;
-        inherit (dockerTools) buildImage;
-        # Use specific version of ocamlPackages
-        # inherit (pkgs) ocamlPackages;
+        inherit (pkgs) mkShell;
         ocamlPackages = pkgs.ocaml-ng.ocamlPackages_5_3;
         inherit (ocamlPackages) buildDunePackage;
         name = "sim";
@@ -31,7 +25,7 @@
           default = mkShell {
             inputsFrom = [self'.packages.default];
             buildInputs = with ocamlPackages; [
-                camlzip
+              camlzip
               utop
               ocamlformat
               # patch ocaml-lsp so that inlay hints dont hide ghost values
@@ -57,17 +51,6 @@
               graphics
               core_bench
             ];
-          };
-
-          docker = buildImage {
-            inherit name;
-            tag = version;
-            config = {
-              Cmd = ["${self'.packages.default}/bin/${name}"];
-              Env = [
-                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-              ];
-            };
           };
         };
       };

@@ -1,0 +1,18 @@
+
+
+(library
+ (name otree)
+ (modules otree)
+ (libraries owl body core)
+ (preprocess
+  (pps ppx_jane)))
+
+(library
+ (name otree_test)
+ (modules otree_test)
+ (libraries otree core)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))
+
+

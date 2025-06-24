@@ -8,6 +8,15 @@ module Physics = struct
   type point = Owl.Mat.mat
   type vec = Owl.Mat.mat
 
+
+
+  let ( .%{} ) x dim =
+    match dim with
+    | `x -> Mat.( .%{} ) x (0, 0)
+    | `y -> Mat.( .%{} ) x (0, 1)
+    | `z -> Mat.( .%{} ) x (0, 2)
+  ;;
+
   let point (a : float) (b : float) (c : float) : point =
     let v1 = vector 3 in
     v1.%{0, 0} <- a;
@@ -17,13 +26,6 @@ module Physics = struct
   ;;
 
   let vec : float -> float -> float -> vec = point
-
-  let ( .%{} ) x dim =
-    match dim with
-    | `x -> Mat.( .%{} ) x (0, 0)
-    | `y -> Mat.( .%{} ) x (0, 1)
-    | `z -> Mat.( .%{} ) x (0, 2)
-  ;;
 
   let pp ppf v = Format.fprintf ppf "x: %.4f y: %.4f z: %.4f" v.%{`x} v.%{`y} v.%{`z}
   let print v = Format.fprintf Format.std_formatter "%a\n" pp v

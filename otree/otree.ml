@@ -1,14 +1,6 @@
 open! Core
 module Physics = Body.Physics
 
-(* Centroid *)
-module C = struct
-  type t =
-    { p : Physics.point
-    ; m : float
-    }
-end
-
 (* Bounding box *)
 module Bb = struct
   type t =
@@ -132,11 +124,22 @@ module Bb = struct
   ;;
 end
 
+(* Centroid *)
+module C = struct
+  type t =
+    { p : Physics.point
+    ; m : float
+    }
+
+  let empty = Physics.{ p = Physics.zero; m = 0. }
+
+  let add (c1 : t) (c2 : t) : t =
+    Physicszy
+
+end
+
 type t =
   | Node of (C.t * t)
   | Leaf of (C.t * t)
   | Empty of t
-  | Root of (Bb.t * t)
   | End
-
-let empty bb = Root (bb, End)

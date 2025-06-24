@@ -8,8 +8,6 @@ module Physics = struct
   type point = Owl.Mat.mat
   type vec = Owl.Mat.mat
 
-
-
   let ( .%{} ) x dim =
     match dim with
     | `x -> Mat.( .%{} ) x (0, 0)
@@ -26,7 +24,6 @@ module Physics = struct
   ;;
 
   let vec : float -> float -> float -> vec = point
-
   let pp ppf v = Format.fprintf ppf "x: %.4f y: %.4f z: %.4f" v.%{`x} v.%{`y} v.%{`z}
   let print v = Format.fprintf Format.std_formatter "%a\n" pp v
   let displace (p : point) (v : vec) = add_ p v

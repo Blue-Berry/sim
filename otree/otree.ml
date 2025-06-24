@@ -131,11 +131,14 @@ module C = struct
     ; m : float
     }
 
-  let empty = Physics.{ p = Physics.zero; m = 0. }
+  let empty = { p = Physics.zero; m = 0. }
 
   let add (c1 : t) (c2 : t) : t =
-    Physicszy
-
+    let open Owl.Mat in
+    let m = c1.m +. c2.m in
+    let p = ((c1.m $* c1.p) + (c2.m $* c2.p)) /$ m in
+    { p; m }
+  ;;
 end
 
 type t =

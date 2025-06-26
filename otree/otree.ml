@@ -143,6 +143,7 @@ module C = struct
     ; m : float
     }
 
+  let pp fmt (c : t) = Format.fprintf fmt "P: %a M: %.2f" Physics.pp c.p c.m
   let empty = { p = Physics.zero; m = 0. }
 
   let add (c1 : t) (c2 : t) : t =
@@ -161,6 +162,31 @@ type tree =
   ; (* 8 x capacity *)
     children : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array2.t
   }
+
+let print_tree (tree : tree) =
+  let open Format in
+  let mass_xyz : string =
+    List.init tree.size ~f:(fun i ->
+      tree.mass_xyz.{0, i}, tree.mass_xyz.{1, i}, tree.mass_xyz.{2, i})
+    |> List.fold ~init:"" ~f:(fun acc (x, y, z) ->
+      acc ^ Printf.sprintf "%.2f %.2f %.2f " x y z)
+  in
+  let mass : string =
+    List.init tree.size ~f:(fun i -> tree.mass.{i})
+    |> List.fold ~init:"" ~f:(fun acc m -> acc ^ Printf.sprintf "%.2f " m)
+  in
+  fprintf
+    std_formatter
+    "Tree:\nsize: %d\ncapacity: %d\nmass_xyz: %s\nmass: %s\nchildren: %s\n"
+    tree.size
+    tree.capacity
+    mass_xyz
+    mass
+    (List.init tree.size ~f:(fun i ->
+       List.init 8 ~f:(fun j -> tree.children.{j, i} |> Int32.to_string)
+       |> List.fold ~init:" " ~f:(fun c acc -> acc ^ "-" ^ c))
+     |> List.fold ~init:"" ~f:(fun s acc -> s ^ acc))
+;;
 
 let create_tree ~capacity =
   { size = 0
@@ -228,21 +254,20 @@ let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
     match has_children tree.children node_index with
     | false (* leaf *) ->
       let c' = get_centroid tree node_index in
-      update_centroid tree node_index (C.add c c');
-      (* add previous leaf as a new child and add the new node to the list of children if they are in the same new child then recruse *)
-      let child1_oct = Bb.octant_of_point c'.p bb in
-      let child2_oct = Bb.octant_of_point c.p bb in
-      if phys_equal child1_oct child2_oct
-      then (
-        let child1_index = append_leaf tree c' in
-        tree.children.{Bb.int_of_octant child1_oct, node_index} <- Int32.of_int_exn child1_index;
-        insert child1_index (Bb.octant_bb bb child1_oct))
+      let leaf_index = append_leaf tree c' in
+      tree.children.{Bb.(octant_of_point c'.p bb |> int_of_octant), node_index}
+      <- Int32.of_int_exn leaf_index;
+      insert node_index bb
+    | true (* internal *) ->
+      update_centroid tree node_index (C.add c (get_centroid tree node_index));
+      let octant = Bb.octant_of_point c.p bb in
+      let octant_idx = Bb.int_of_octant octant in
+      if Int32.equal tree.children.{octant_idx, node_index} Int32.zero
+      then tree.children.{octant_idx, node_index} <- Int32.of_int_exn (append_leaf tree c)
       else
-        tree.children.{Bb.int_of_octant child1_oct, node_index}
-        <- append_leaf tree c' |> Int32.of_int_exn;
-      tree.children.{Bb.int_of_octant child2_oct, node_index}
-      <- append_leaf tree c |> Int32.of_int_exn
-    | true (* internal *) -> failwith "TODO"
+        insert
+          (Int32.to_int_exn tree.children.{octant_idx, node_index})
+          (Bb.octant_bb bb octant)
   in
   insert 0 bb
 ;;

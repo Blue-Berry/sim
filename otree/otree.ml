@@ -27,14 +27,14 @@ module Bb = struct
 
   let int_of_octant (o : octant) : int =
     match o with
-    | O1 -> 1
-    | O2 -> 2
-    | O3 -> 3
-    | O4 -> 4
-    | O5 -> 5
-    | O6 -> 6
-    | O7 -> 7
-    | O8 -> 8
+    | O1 -> 0
+    | O2 -> 1
+    | O3 -> 2
+    | O4 -> 3
+    | O5 -> 4
+    | O6 -> 5
+    | O7 -> 6
+    | O8 -> 7
   ;;
 
   let octant_of_point (p : Body.Physics.point) (bb : t) : octant =
@@ -43,6 +43,17 @@ module Bb = struct
     let x = p.%{`x} in
     let y = p.%{`y} in
     let z = p.%{`z} in
+    printf
+      "octant_of_point %f %f %f; In box: %f %f %f %f %f %f\n"
+      x
+      y
+      z
+      bb.x_min
+      bb.x_max
+      bb.y_min
+      bb.y_max
+      bb.z_min
+      bb.z_max;
     assert (x <= bb.x_max && x >= bb.x_min);
     assert (y <= bb.y_max && y >= bb.y_min);
     assert (z <= bb.z_max && z >= bb.z_min);
@@ -166,13 +177,13 @@ type tree =
 let print_tree (tree : tree) =
   let open Format in
   let mass_xyz : string =
-    List.init tree.size ~f:(fun i ->
-      tree.mass_xyz.{0, i}, tree.mass_xyz.{1, i}, tree.mass_xyz.{2, i})
+    List.init (tree.size) ~f:(fun i ->
+      tree.mass_xyz.{i, 0}, tree.mass_xyz.{i, 1}, tree.mass_xyz.{i, 2})
     |> List.fold ~init:"" ~f:(fun acc (x, y, z) ->
       acc ^ Printf.sprintf "%.2f %.2f %.2f " x y z)
   in
   let mass : string =
-    List.init tree.size ~f:(fun i -> tree.mass.{i})
+    List.init (tree.size) ~f:(fun i -> tree.mass.{i})
     |> List.fold ~init:"" ~f:(fun acc m -> acc ^ Printf.sprintf "%.2f " m)
   in
   fprintf
@@ -182,8 +193,8 @@ let print_tree (tree : tree) =
     tree.capacity
     mass_xyz
     mass
-    (List.init tree.size ~f:(fun i ->
-       List.init 8 ~f:(fun j -> tree.children.{j, i} |> Int32.to_string)
+    (List.init (tree.size) ~f:(fun i ->
+       List.init 8 ~f:(fun j -> tree.children.{i, j} |> Int32.to_string)
        |> List.fold ~init:" " ~f:(fun c acc -> acc ^ "-" ^ c))
      |> List.fold ~init:"" ~f:(fun s acc -> s ^ acc))
 ;;
@@ -191,9 +202,9 @@ let print_tree (tree : tree) =
 let create_tree ~capacity =
   { size = 0
   ; capacity
-  ; mass_xyz = Bigarray.Array2.create Float32 C_layout 3 capacity
-  ; mass = Bigarray.Array1.create Float32 C_layout capacity
-  ; children = Bigarray.Array2.create Int32 C_layout 8 capacity
+  ; mass_xyz = Bigarray.Array2.init Float32 C_layout capacity 3 (fun _ _ -> 0.)
+  ; mass = Bigarray.Array1.init Float32 C_layout capacity (fun _ -> 0.)
+  ; children = Bigarray.Array2.init Int32 C_layout capacity 8 (fun _ _ -> Int32.zero)
   }
 ;;
 
@@ -202,15 +213,15 @@ let has_children
       i
   =
   let open Int32 in
-  List.init 8 ~f:(fun j -> arr.{j, i} > zero)
+  List.init 7 ~f:(fun j -> arr.{j, i} > zero)
   |> List.fold ~init:false ~f:(fun acc x -> acc || x)
 ;;
 
 let update_centroid (tree : tree) (node_index : int) (c : C.t) : unit =
   let open Physics in
-  tree.mass_xyz.{0, node_index} <- c.p.%{`x};
-  tree.mass_xyz.{1, node_index} <- c.p.%{`y};
-  tree.mass_xyz.{2, node_index} <- c.p.%{`z};
+  tree.mass_xyz.{node_index, 0} <- c.p.%{`x};
+  tree.mass_xyz.{node_index, 1} <- c.p.%{`y};
+  tree.mass_xyz.{node_index, 2} <- c.p.%{`z};
   tree.mass.{node_index} <- c.m
 ;;
 
@@ -218,9 +229,9 @@ let get_centroid (tree : tree) (node_index : int) : C.t =
   let open Physics in
   let p =
     point
-      tree.mass_xyz.{0, node_index}
-      tree.mass_xyz.{1, node_index}
-      tree.mass_xyz.{2, node_index}
+      tree.mass_xyz.{node_index, 0}
+      tree.mass_xyz.{node_index, 1}
+      tree.mass_xyz.{node_index, 2}
   in
   C.{ p; m = tree.mass.{node_index} }
 ;;
@@ -229,9 +240,19 @@ let grow_tree (tree : tree) : tree =
   let new_capacity = tree.capacity * 2 in
   let new_tree = create_tree ~capacity:new_capacity in
   Bigarray.(
-    Array2.blit tree.mass_xyz new_tree.mass_xyz;
-    Array2.blit tree.children new_tree.children;
-    Array1.blit tree.mass new_tree.mass);
+    assert (phys_equal (Array2.dim2 tree.mass_xyz) (Array2.dim2 new_tree.mass_xyz));
+    printf
+      "mass_xyz size: %d %d; Capacity: %d\n"
+      (Array2.dim1 tree.mass_xyz)
+      (Array2.dim2 tree.mass_xyz)
+      new_tree.capacity;
+    assert (phys_equal (Array2.dim1 new_tree.mass_xyz) new_tree.capacity);
+    assert (phys_equal (Array2.dim2 new_tree.children) (Array2.dim2 new_tree.children));
+    assert (phys_equal (Array2.dim1 new_tree.children) new_tree.capacity);
+    assert (phys_equal (Array1.dim new_tree.mass) new_tree.capacity);
+    Array2.blit tree.mass_xyz (Array2.sub_left new_tree.mass_xyz 0 tree.capacity);
+    Array2.blit tree.children (Array2.sub_left new_tree.children 0 tree.capacity);
+    Array1.blit tree.mass (Array1.sub new_tree.mass 0 tree.capacity));
   new_tree.size <- tree.size;
   new_tree
 ;;
@@ -241,33 +262,54 @@ let append_leaf (tree : tree) (c : C.t) : int =
   let node_index = tree.size in
   update_centroid tree node_index c;
   tree.size <- tree.size + 1;
-  Int32.(
-    for i = 0 to 7 do
-      tree.children.{i, node_index} <- zero
-    done);
   node_index
 ;;
 
+(* TODO: No base case for insert; infinite recursion *)
 let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
   let rec insert node_index bb =
+    printf "insert %d\n" node_index;
+    print_tree tree;
     assert (node_index < tree.capacity);
     match has_children tree.children node_index with
     | false (* leaf *) ->
       let c' = get_centroid tree node_index in
-      let leaf_index = append_leaf tree c' in
-      tree.children.{Bb.(octant_of_point c'.p bb |> int_of_octant), node_index}
-      <- Int32.of_int_exn leaf_index;
-      insert node_index bb
+      if Float.(c'.m = 0.) (*check if leaf is empty*)
+      then (
+        print_endline "leaf is empty";
+        tree.size <- tree.size + 1;
+        update_centroid tree node_index c)
+      else (
+        (* Turns leaf into internal node *)
+        let leaf_index = append_leaf tree c' in
+        print_endline
+        @@ "leaf is not empty: creating node and reinserting at idx: "
+        ^ string_of_int leaf_index;
+        tree.children.{node_index, Bb.(octant_of_point c'.p bb |> int_of_octant)}
+        <- Int32.of_int_exn leaf_index;
+        insert node_index bb)
     | true (* internal *) ->
       update_centroid tree node_index (C.add c (get_centroid tree node_index));
       let octant = Bb.octant_of_point c.p bb in
       let octant_idx = Bb.int_of_octant octant in
-      if Int32.equal tree.children.{octant_idx, node_index} Int32.zero
-      then tree.children.{octant_idx, node_index} <- Int32.of_int_exn (append_leaf tree c)
-      else
+      if Int32.equal tree.children.{node_index, octant_idx} Int32.zero
+      then (
+        print_endline "empty branch";
+        let leaf_index = append_leaf tree c in
+        print_endline
+        @@ "node branch is empty: inserting leaf at idx: "
+        ^ string_of_int leaf_index;
+        tree.children.{node_index, octant_idx} <- Int32.of_int_exn leaf_index)
+      else (
+        failwithf
+          "octant_idx: %d; child at octant: %d"
+          octant_idx
+          (Int32.to_int_exn tree.children.{node_index, octant_idx})
+          ()
+        |> ignore;
         insert
-          (Int32.to_int_exn tree.children.{octant_idx, node_index})
-          (Bb.octant_bb bb octant)
+          (Int32.to_int_exn tree.children.{node_index, octant_idx})
+          (Bb.octant_bb bb octant))
   in
   insert 0 bb
 ;;

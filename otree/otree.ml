@@ -43,17 +43,17 @@ module Bb = struct
     let x = p.%{`x} in
     let y = p.%{`y} in
     let z = p.%{`z} in
-    printf
-      "octant_of_point %f %f %f; In box: %f %f %f %f %f %f\n"
-      x
-      y
-      z
-      bb.x_min
-      bb.x_max
-      bb.y_min
-      bb.y_max
-      bb.z_min
-      bb.z_max;
+    (* printf *)
+    (*   "octant_of_point %f %f %f; In box: %f %f %f %f %f %f\n" *)
+    (*   x *)
+    (*   y *)
+    (*   z *)
+    (*   bb.x_min *)
+    (*   bb.x_max *)
+    (*   bb.y_min *)
+    (*   bb.y_max *)
+    (*   bb.z_min *)
+    (*   bb.z_max; *)
     assert (x <= bb.x_max && x >= bb.x_min);
     assert (y <= bb.y_max && y >= bb.y_min);
     assert (z <= bb.z_max && z >= bb.z_min);
@@ -177,13 +177,13 @@ type tree =
 let print_tree (tree : tree) =
   let open Format in
   let mass_xyz : string =
-    List.init (tree.size) ~f:(fun i ->
+    List.init tree.size ~f:(fun i ->
       tree.mass_xyz.{i, 0}, tree.mass_xyz.{i, 1}, tree.mass_xyz.{i, 2})
     |> List.fold ~init:"" ~f:(fun acc (x, y, z) ->
       acc ^ Printf.sprintf "%.2f %.2f %.2f " x y z)
   in
   let mass : string =
-    List.init (tree.size) ~f:(fun i -> tree.mass.{i})
+    List.init tree.size ~f:(fun i -> tree.mass.{i})
     |> List.fold ~init:"" ~f:(fun acc m -> acc ^ Printf.sprintf "%.2f " m)
   in
   fprintf
@@ -193,8 +193,9 @@ let print_tree (tree : tree) =
     tree.capacity
     mass_xyz
     mass
-    (List.init (tree.size) ~f:(fun i ->
+    (List.init tree.size ~f:(fun i ->
        List.init 8 ~f:(fun j -> tree.children.{i, j} |> Int32.to_string)
+       |> List.rev
        |> List.fold ~init:" " ~f:(fun c acc -> acc ^ "-" ^ c))
      |> List.fold ~init:"" ~f:(fun s acc -> s ^ acc))
 ;;
@@ -213,7 +214,7 @@ let has_children
       i
   =
   let open Int32 in
-  List.init 7 ~f:(fun j -> arr.{j, i} > zero)
+  List.init 7 ~f:(fun j -> arr.{i, j} > zero)
   |> List.fold ~init:false ~f:(fun acc x -> acc || x)
 ;;
 
@@ -265,28 +266,22 @@ let append_leaf (tree : tree) (c : C.t) : int =
   node_index
 ;;
 
-(* TODO: No base case for insert; infinite recursion *)
 let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
   let rec insert node_index bb =
-    printf "insert %d\n" node_index;
-    print_tree tree;
     assert (node_index < tree.capacity);
     match has_children tree.children node_index with
     | false (* leaf *) ->
       let c' = get_centroid tree node_index in
       if Float.(c'.m = 0.) (*check if leaf is empty*)
       then (
-        print_endline "leaf is empty";
         tree.size <- tree.size + 1;
         update_centroid tree node_index c)
       else (
         (* Turns leaf into internal node *)
         let leaf_index = append_leaf tree c' in
-        print_endline
-        @@ "leaf is not empty: creating node and reinserting at idx: "
-        ^ string_of_int leaf_index;
         tree.children.{node_index, Bb.(octant_of_point c'.p bb |> int_of_octant)}
         <- Int32.of_int_exn leaf_index;
+        (* if node_index > 1 then failwithf "node_index == %d; Has_children: %b" node_index (has_children tree.children node_index) (); *)
         insert node_index bb)
     | true (* internal *) ->
       update_centroid tree node_index (C.add c (get_centroid tree node_index));
@@ -294,22 +289,12 @@ let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
       let octant_idx = Bb.int_of_octant octant in
       if Int32.equal tree.children.{node_index, octant_idx} Int32.zero
       then (
-        print_endline "empty branch";
         let leaf_index = append_leaf tree c in
-        print_endline
-        @@ "node branch is empty: inserting leaf at idx: "
-        ^ string_of_int leaf_index;
         tree.children.{node_index, octant_idx} <- Int32.of_int_exn leaf_index)
-      else (
-        failwithf
-          "octant_idx: %d; child at octant: %d"
-          octant_idx
-          (Int32.to_int_exn tree.children.{node_index, octant_idx})
-          ()
-        |> ignore;
+      else
         insert
           (Int32.to_int_exn tree.children.{node_index, octant_idx})
-          (Bb.octant_bb bb octant))
+          (Bb.octant_bb bb octant)
   in
   insert 0 bb
 ;;

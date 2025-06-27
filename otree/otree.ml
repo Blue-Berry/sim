@@ -176,28 +176,26 @@ type tree =
 
 let print_tree (tree : tree) =
   let open Format in
-  let mass_xyz : string =
+  let centroids =
     List.init tree.size ~f:(fun i ->
-      tree.mass_xyz.{i, 0}, tree.mass_xyz.{i, 1}, tree.mass_xyz.{i, 2})
-    |> List.fold ~init:"" ~f:(fun acc (x, y, z) ->
-      acc ^ Printf.sprintf "%.2f %.2f %.2f " x y z)
-  in
-  let mass : string =
-    List.init tree.size ~f:(fun i -> tree.mass.{i})
-    |> List.fold ~init:"" ~f:(fun acc m -> acc ^ Printf.sprintf "%.2f " m)
+      let p =
+        Physics.point tree.mass_xyz.{i, 0} tree.mass_xyz.{i, 1} tree.mass_xyz.{i, 2}
+      in
+      let m = tree.mass.{i} in
+      C.{ p; m })
+    |> List.foldi ~init:"" ~f:(fun i acc c -> acc ^ "\n" ^ Format.asprintf "%d)\t%a" i C.pp c)
   in
   fprintf
     std_formatter
-    "Tree:\nsize: %d\ncapacity: %d\nmass_xyz: %s\nmass: %s\nchildren: %s\n"
+    "Tree:\nsize: %d\ncapacity: %d\ncentroids: %s\nchildren: %s\n"
     tree.size
     tree.capacity
-    mass_xyz
-    mass
+    centroids
     (List.init tree.size ~f:(fun i ->
        List.init 8 ~f:(fun j -> tree.children.{i, j} |> Int32.to_string)
        |> List.rev
        |> List.fold ~init:" " ~f:(fun c acc -> acc ^ "-" ^ c))
-     |> List.fold ~init:"" ~f:(fun s acc -> s ^ acc))
+     |> List.foldi ~init:"" ~f:(fun i s acc -> s ^ "\n" ^ (string_of_int i) ^ ")\t" ^ acc))
 ;;
 
 let create_tree ~capacity =

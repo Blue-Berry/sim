@@ -23,12 +23,35 @@ type octant =
   | O8 (* --- *)
 [@@deriving sexp_of]
 
+let int_of_octant (o : octant) : int =
+  match o with
+  | O1 -> 0
+  | O2 -> 1
+  | O3 -> 2
+  | O4 -> 3
+  | O5 -> 4
+  | O6 -> 5
+  | O7 -> 6
+  | O8 -> 7
+;;
+
 let octant_of_point (p : Body.Physics.point) (bb : t) : octant =
   let open Body.Physics in
   let open Float in
   let x = p.%{`x} in
   let y = p.%{`y} in
   let z = p.%{`z} in
+  (* printf *)
+  (*   "octant_of_point %f %f %f; In box: %f %f %f %f %f %f\n" *)
+  (*   x *)
+  (*   y *)
+  (*   z *)
+  (*   bb.x_min *)
+  (*   bb.x_max *)
+  (*   bb.y_min *)
+  (*   bb.y_max *)
+  (*   bb.z_min *)
+  (*   bb.z_max; *)
   assert (x <= bb.x_max && x >= bb.x_min);
   assert (y <= bb.y_max && y >= bb.y_min);
   assert (z <= bb.z_max && z >= bb.z_min);

@@ -172,10 +172,8 @@ module LinearOctree = struct
     ; bounds : Bb.t
     }
 
-  (* Create empty octree *)
   let create bounds = { data = MortonMap.empty; bounds }
 
-  (* Insert a point *)
   let insert point value octree =
     let morton = Morton126.encode_point point octree.bounds in
     let entry = { point; value } in
@@ -188,7 +186,6 @@ module LinearOctree = struct
     { octree with data = updated_data }
   ;;
 
-  (* Range query *)
   let range_query (query_bounds : Bb.t) octree =
     let min_point =
       Physics.point query_bounds.x_min query_bounds.y_min query_bounds.z_min
@@ -221,7 +218,6 @@ module LinearOctree = struct
       []
   ;;
 
-  (* Nearest neighbor search *)
   let nearest_neighbor query_point k octree =
     let distance_squared p1 p2 =
       let open Physics in
@@ -250,7 +246,6 @@ module LinearOctree = struct
     take k sorted []
   ;;
 
-  (* Bulk insert *)
   let bulk_insert points_values octree =
     List.fold_left
       ~f:(fun acc (point, value) -> insert point value acc)
@@ -258,18 +253,15 @@ module LinearOctree = struct
       points_values
   ;;
 
-  (* Get all entries *)
   let to_list octree =
     MortonMap.fold (fun _ entries acc -> List.rev_append entries acc) octree.data []
   ;;
 
-  (* Size *)
   let size octree =
     MortonMap.fold (fun _ entries acc -> acc + List.length entries) octree.data 0
   ;;
 end
 
-(* Usage example *)
 let example_usage () =
   (* Create 3D octree with bounds *)
   let bounds =
@@ -282,7 +274,6 @@ let example_usage () =
     }
   in
   let octree = LinearOctree.create bounds in
-  (* 20 bits per dimension *)
   (* Insert some points *)
   let points =
     let open Physics in
@@ -303,7 +294,6 @@ let example_usage () =
     }
   in
   let results = LinearOctree.range_query query_bounds octree_with_data in
-  (* Nearest neighbor *)
   let query_point = Physics.point 100.0 200.0 300.0 in
   let nearest = LinearOctree.nearest_neighbor query_point 2 octree_with_data in
   octree_with_data, results, nearest

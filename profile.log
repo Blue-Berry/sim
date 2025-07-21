@@ -1,0 +1,742 @@
+FUNCTION  <SNR>71_savetofile()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:88
+Called 1 time
+Total time:   0.190897
+ Self time:   0.000008
+
+count  total (s)   self (s)
+    1   0.190897   0.000007 	cal ctrlp#utils#writecache(a:mrufs, s:cadir, s:cafile)
+
+FUNCTION  provider#clipboard#Call()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/autoload/provider/clipboard.vim:347
+Called 2 times
+Total time:   0.009863
+ Self time:   0.000197
+
+count  total (s)   self (s)
+    2              0.000038   if get(s:, 'here', v:false)  " Clipboard provider must not recurse. #7184
+                                return 0
+    2              0.000004   endif
+    2              0.000009   let s:here = v:true
+    2              0.000003   try
+    2   0.009757   0.000092     return call(s:clipboard[a:method],a:args,s:clipboard)
+    2              0.000006   finally
+    2              0.000013     let s:here = v:false
+    2              0.000010   endtry
+
+FUNCTION  1()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/autoload/provider/clipboard.vim:22
+Called 2 times
+Total time:   0.000025
+ Self time:   0.000025
+
+count  total (s)   self (s)
+                              " At this point this nvim instance might already have launched
+                              " a new provider instance. Don't drop ownership in this case.
+    2              0.000006   if self.owner == a:jobid
+    2              0.000004     let self.owner = 0
+    2              0.000001   endif
+                              " Don't print if exit code is >= 128 ( exit is 128+SIGNUM if by signal (e.g. 143 on SIGTERM))
+    2              0.000002   if a:data > 0 && a:data < 128
+                                echohl WarningMsg
+                                echomsg 'clipboard: error invoking '.get(self.argv, 0, '?').': '.join(self.stderr)
+                                echohl None
+    2              0.000001   endif
+
+FUNCTION  3()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/autoload/provider/clipboard.vim:288
+Called 2 times
+Total time:   0.009666
+ Self time:   0.009666
+
+count  total (s)   self (s)
+    2              0.000007   if a:reg == '"'
+                                call s:clipboard.set(a:lines,a:regtype,'+')
+                                if s:copy['*'] != s:copy['+']
+                                  call s:clipboard.set(a:lines,a:regtype,'*')
+                                end
+                                return 0
+    2              0.000001   end
+                            
+    2              0.000011   if type(s:copy[a:reg]) == v:t_func
+                                call s:copy[a:reg](a:lines, a:regtype)
+                                return 0
+    2              0.000001   end
+                            
+    2              0.000003   if s:cache_enabled == 0
+                                call s:try_cmd(s:copy[a:reg], a:lines)
+                                "Cache it anyway we can compare it later to get regtype of the yank
+                                let s:selections[a:reg] = copy(s:selection)
+                                let s:selections[a:reg].data = [a:lines, a:regtype]
+                                return 0
+    2              0.000001   end
+                            
+    2              0.000011   if s:selections[a:reg].owner > 0
+                                let prev_job = s:selections[a:reg].owner
+    2              0.000001   end
+    2              0.000016   let s:selections[a:reg] = copy(s:selection)
+    2              0.000006   let selection = s:selections[a:reg]
+    2              0.000008   let selection.data = [a:lines, a:regtype]
+    2              0.000006   let selection.argv = s:copy[a:reg]
+    2              0.000004   let selection.detach = s:cache_enabled
+    2              0.000005   let selection.cwd = "/"
+    2              0.009234   let jobid = jobstart(selection.argv, selection)
+    2              0.000047   if jobid > 0
+    2              0.000061     call jobsend(jobid, a:lines)
+    2              0.000013     call jobclose(jobid, 'stdin')
+                                " xclip does not close stdout when receiving input via stdin
+    2              0.000015     if selection.argv[0] ==# 'xclip'
+                                  call jobclose(jobid, 'stdout')
+    2              0.000005     endif
+    2              0.000016     let selection.owner = jobid
+    2              0.000006     let ret = 1
+                              else
+                                echohl WarningMsg
+                                echomsg 'clipboard: failed to execute: '.(s:copy[a:reg])
+                                echohl None
+                                let ret = 1
+    2              0.000002   endif
+                            
+                              " The previous provider instance should exit when the new one takes
+                              " ownership, but kill it to be sure we don't fill up the job table.
+    2              0.000011   if exists('prev_job')
+                                call timer_start(1000, {... -> jobwait([prev_job], 0)[0] == -1 && jobstop(prev_job)})
+    2              0.000002   endif
+                            
+    2              0.000011   return ret
+
+FUNCTION  ctrlp#mrufiles#cachefile()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:137
+Called 1 time
+Total time:   0.000007
+ Self time:   0.000007
+
+count  total (s)   self (s)
+    1              0.000003 	if !exists('s:cadir') || !exists('s:cafile')
+                            		let s:cadir = ctrlp#utils#cachedir().ctrlp#utils#lash().'mru'
+                            		let s:cafile = s:cadir.ctrlp#utils#lash().'cache.txt'
+    1              0.000000 	en
+    1              0.000001 	retu s:cafile
+
+FUNCTION  <SNR>12_SynSet()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/syntax/synload.vim:27
+Called 23 times
+Total time:   0.024943
+ Self time:   0.024943
+
+count  total (s)   self (s)
+                              " clear syntax for :set syntax=OFF  and any syntax name that doesn't exist
+   23              0.000057   syn clear
+   23              0.000031   if exists("b:current_syntax")
+                                unlet b:current_syntax
+   23              0.000007   endif
+                            
+   23              0.000050   0verbose let s = expand("<amatch>")
+   23              0.000020   if s == "ON"
+                                " :set syntax=ON
+                                if &filetype == ""
+                                  echohl ErrorMsg
+                                  echo "filetype unknown"
+                                  echohl None
+                                endif
+                                let s = &filetype
+   23              0.000022   elseif s == "OFF"
+                                let s = ""
+   23              0.000006   endif
+                            
+   23              0.000013   if s != ""
+                                " Load the syntax file(s).  When there are several, separated by dots,
+                                " load each in sequence.  Skip empty entries.
+   46              0.000079     for name in split(s, '\.')
+   23              0.000030       if !empty(name)
+                                    " XXX: "[.]" in the first pattern makes it a wildcard on Windows
+   23              0.024359         exe $'runtime! syntax/{name}[.]{{vim,lua}} syntax/{name}/*.{{vim,lua}}'
+   23              0.000010       endif
+   46              0.000021     endfor
+   23              0.000007   endif
+
+FUNCTION  <SNR>71_record()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:59
+Called 52 times
+Total time:   0.001802
+ Self time:   0.001261
+
+count  total (s)   self (s)
+   52              0.000221 	if s:locked | retu | en
+   52              0.000186 	let bufnr = a:bufnr + 0
+   52              0.000161 	let bufname = bufname(bufnr)
+   52              0.000177 	if bufnr > 0 && !empty(bufname)
+    3              0.000061 		cal filter(s:mrbs, 'v:val != bufnr')
+    3              0.000013 		cal insert(s:mrbs, bufnr)
+    3   0.000613   0.000072 		cal s:addtomrufs(bufname)
+   52              0.000028 	en
+
+FUNCTION  ctrlp#utils#mkdir()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/utils.vim:56
+Called 1 time
+Total time:   0.000005
+ Self time:   0.000005
+
+count  total (s)   self (s)
+    1              0.000003 	if exists('*mkdir') && !isdirectory(a:dir)
+                            		sil! cal mkdir(a:dir, 'p')
+    1              0.000000 	en
+    1              0.000000 	retu a:dir
+
+FUNCTION  <SNR>71_mergelists()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:31
+Called 1 time
+Total time:   0.000085
+ Self time:   0.000041
+
+count  total (s)   self (s)
+    1   0.000046   0.000007 	let diskmrufs = ctrlp#utils#readfile(ctrlp#mrufiles#cachefile())
+    1              0.000026 	cal filter(diskmrufs, 'index(s:mrufs, v:val) < 0')
+    1              0.000005 	let mrufs = s:mrufs + diskmrufs
+    1   0.000007   0.000003 	retu s:chop(mrufs)
+
+FUNCTION  <SNR>16_Highlight_Matching_Pair()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/plugin/matchparen.vim:45
+Called 175 times
+Total time:   0.040995
+ Self time:   0.037441
+
+count  total (s)   self (s)
+  175              0.001344   if !exists("w:matchparen_ids")
+                                let w:matchparen_ids = []
+  175              0.000248   endif
+                              " Remove any previous match.
+  175   0.005055   0.001500   call s:Remove_Matches()
+                            
+                              " Avoid that we remove the popup menu.
+                              " Return when there are no colors (looks like the cursor jumps).
+  175              0.001071   if pumvisible() || (&t_Co < 8 && !has("gui_running"))
+                                return
+  175              0.000090   endif
+                            
+                              " Get the character under the cursor and check if it's in 'matchpairs'.
+  175              0.000653   let c_lnum = line('.')
+  175              0.000462   let c_col = col('.')
+  175              0.000200   let before = 0
+                            
+  175              0.000534   let text = getline(c_lnum)
+  175              0.001209   let c_before = text->strpart(0, c_col - 1)->slice(-1)
+  175              0.000781   let c = text->strpart(c_col - 1)->slice(0, 1)
+  175              0.002997   let plist = split(&matchpairs, '.\zs[:,]')
+  175              0.000658   let i = index(plist, c)
+  175              0.000218   if i < 0
+                                " not found, in Insert mode try character before the cursor
+  140              0.000607     if c_col > 1 && (mode() == 'i' || mode() == 'R')
+   89              0.000310       let before = strlen(c_before)
+   89              0.000142       let c = c_before
+   89              0.000253       let i = index(plist, c)
+  140              0.000127     endif
+  140              0.000145     if i < 0
+                                  " not found, nothing to do
+  140              0.000194       return
+                                endif
+   35              0.000017   endif
+                            
+                              " Figure out the arguments for searchpairpos().
+   35              0.000046   if i % 2 == 0
+                                let s_flags = 'nW'
+                                let c2 = plist[i + 1]
+   35              0.000026   else
+   35              0.000048     let s_flags = 'nbW'
+   35              0.000054     let c2 = c
+   35              0.000094     let c = plist[i - 1]
+   35              0.000021   endif
+   35              0.000057   if c == '['
+                                let c = '\['
+                                let c2 = '\]'
+   35              0.000015   endif
+                            
+                              " Find the match.  When it was just before the cursor move it there for a
+                              " moment.
+   35              0.000042   if before > 0
+                                let save_cursor = getcurpos()
+                                call cursor(c_lnum, c_col - before)
+                                defer setpos('.', save_cursor)
+   35              0.000015   endif
+                            
+   35              0.000212   if !has("syntax") || !exists("g:syntax_on")
+                                let s_skip = "0"
+   35              0.000145   elseif exists("b:ts_highlight") && &syntax != 'on'
+   35              0.000158     let s_skip = "match(v:lua.vim.treesitter.get_captures_at_cursor(), '" .. 'string\|character\|singlequote\|escape\|symbol\|comment' .. "') != -1"
+                              else
+                                " do not attempt to match when the syntax item where the cursor is
+                                " indicates there does not exist a matching parenthesis, e.g. for shells
+                                " case statement: "case $var in foobar)"
+                                "
+                                " add the check behind a filetype check, so it only needs to be
+                                " evaluated for certain filetypes
+                                if ['sh']->index(&filetype) >= 0 && synstack(".", col("."))->indexof({_, id -> synIDattr(id, "name") =~? "shSnglCase"}) >= 0
+                                  return
+                                endif
+                                " Build an expression that detects whether the current cursor position is
+                                " in certain syntax types (string, comment, etc.), for use as
+                                " searchpairpos()'s skip argument.
+                                " We match "escape" for special items, such as lispEscapeSpecial, and
+                                " match "symbol" for lispBarSymbol.
+                                let s_skip = 'synstack(".", col("."))' . '->indexof({_, id -> synIDattr(id, "name") =~? ' . '"string\\|character\\|singlequote\\|escape\\|symbol\\|comment"}) >= 0'
+                                " If executing the expression determines that the cursor is currently in
+                                " one of the syntax types, then we want searchpairpos() to find the pair
+                                " within those syntax types (i.e., not skip).  Otherwise, the cursor is
+                                " outside of the syntax types and s_skip should keep its value so we skip
+                                " any matching pair inside the syntax types.
+                                " Catch if this throws E363: pattern uses more memory than 'maxmempattern'.
+                                try
+                                  execute 'if ' . s_skip . ' | let s_skip = "0" | endif'
+                                catch /^Vim\%((\a\+)\)\=:E363/
+                                  " We won't find anything, so skip searching, should keep Vim responsive.
+                                  return
+                                endtry
+   35              0.000018   endif
+                            
+                              " Limit the search to lines visible in the window.
+   35              0.000150   let stoplinebottom = line('w$')
+   35              0.000069   let stoplinetop = line('w0')
+   35              0.000040   if i % 2 == 0
+                                let stopline = stoplinebottom
+   35              0.000018   else
+   35              0.000061     let stopline = stoplinetop
+   35              0.000017   endif
+                            
+                              " Limit the search time to 300 msec to avoid a hang on very long lines.
+                              " This fails when a timeout is not supported.
+   35              0.000102   if mode() == 'i' || mode() == 'R'
+   31              0.000194     let timeout = exists("b:matchparen_insert_timeout") ? b:matchparen_insert_timeout : g:matchparen_insert_timeout
+    4              0.000001   else
+    4              0.000008     let timeout = exists("b:matchparen_timeout") ? b:matchparen_timeout : g:matchparen_timeout
+   35              0.000016   endif
+   35              0.000028   try
+   35              0.014961     let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline, timeout)
+                              catch /E118/
+                                " Can't use the timeout, restrict the stopline a bit more to avoid taking
+                                " a long time on closed folds and long lines.
+                                " The "viewable" variables give a range in which we can scroll while
+                                " keeping the cursor at the same position.
+                                " adjustedScrolloff accounts for very large numbers of scrolloff.
+                                let adjustedScrolloff = min([&scrolloff, (line('w$') - line('w0')) / 2])
+                                let bottom_viewable = min([line('$'), c_lnum + &lines - adjustedScrolloff - 2])
+                                let top_viewable = max([1, c_lnum-&lines+adjustedScrolloff + 2])
+                                " one of these stoplines will be adjusted below, but the current values are
+                                " minimal boundaries within the current window
+                                if i % 2 == 0
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = min([line2byte("$"), line2byte(".") + col(".") + &smc * 2])
+                            	let stopline = min([bottom_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = min([bottom_viewable, c_lnum + 100])
+                                  endif
+                                  let stoplinebottom = stopline
+                                else
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = max([1, line2byte(".") + col(".") - &smc * 2])
+                            	let stopline = max([top_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = max([top_viewable, c_lnum - 100])
+                                  endif
+                                  let stoplinetop = stopline
+                                endif
+                                let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline)
+   35              0.000040   endtry
+                            
+                              " If a match is found setup match highlighting.
+   35              0.000128   if m_lnum > 0 && m_lnum >= stoplinetop && m_lnum <= stoplinebottom
+   35              0.000052     if !g:matchparen_disable_cursor_hl
+   35              0.000415       call add(w:matchparen_ids, matchaddpos('MatchParen', [[c_lnum, c_col - before], [m_lnum, m_col]], 10))
+                                else
+                                  call add(w:matchparen_ids, matchaddpos('MatchParen', [[m_lnum, m_col]], 10))
+   35              0.000021     endif
+   35              0.000056     let w:paren_hl_on = 1
+   35              0.000021   endif
+
+FUNCTION  <SNR>16_Remove_Matches()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/plugin/matchparen.vim:203
+Called 175 times
+Total time:   0.003554
+ Self time:   0.003554
+
+count  total (s)   self (s)
+  175              0.000745   if exists('w:paren_hl_on') && w:paren_hl_on
+   70              0.000215     while !empty(w:matchparen_ids)
+   35              0.000266       silent! call remove(w:matchparen_ids, 0)->matchdelete()
+   70              0.000168     endwhile
+   35              0.000097     let w:paren_hl_on = 0
+  175              0.000140   endif
+
+FUNCTION  <SNR>68_GetLineWithoutFullComment()
+    Defined: /nix/store/ikw71sas1hfg063wp910za320c3q0cjm-vimplugin-vim-ocaml-2024-03-22/indent/ocaml.vim:57
+Called 6 times
+Total time:   0.000461
+ Self time:   0.000461
+
+count  total (s)   self (s)
+    6              0.000076  let lnum = prevnonblank(a:lnum - 1)
+    6              0.000155  let lline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
+    6              0.000101  while lline =~ '^\s*$' && lnum > 0
+                               let lnum = prevnonblank(lnum - 1)
+                               let lline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
+    6              0.000019  endwhile
+    6              0.000021  return lnum
+
+FUNCTION  ctrlp#utils#readfile()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/utils.vim:44
+Called 1 time
+Total time:   0.000032
+ Self time:   0.000032
+
+count  total (s)   self (s)
+    1              0.000004 	if filereadable(a:file)
+    1              0.000023 		let data = readfile(a:file)
+    1              0.000002 		if empty(data) || type(data) != 3
+                            			unl data
+                            			let data = []
+    1              0.000000 		en
+    1              0.000000 		retu data
+                            	en
+                            	retu []
+
+FUNCTION  <SNR>2_LoadFTPlugin()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/ftplugin.vim:15
+Called 23 times
+Total time:   0.044206
+ Self time:   0.044206
+
+count  total (s)   self (s)
+   23              0.000070     if exists("b:undo_ftplugin")
+                                  exe b:undo_ftplugin
+                                  unlet! b:undo_ftplugin b:did_ftplugin
+   23              0.000012     endif
+                            
+   23              0.000067     let s = expand("<amatch>")
+   23              0.000034     if s != ""
+   23              0.000100       if &cpo =~# "S" && exists("b:did_ftplugin")
+                            	" In compatible mode options are reset to the global values, need to
+                            	" set the local values also when a plugin was already used.
+                            	unlet b:did_ftplugin
+   23              0.000010       endif
+                            
+                                  " When there is a dot it is used to separate filetype names.  Thus for
+                                  " "aaa.bbb" load "aaa" and then "bbb".
+   46              0.000133       for name in split(s, '\.')
+                                    " Load Lua ftplugins after Vim ftplugins _per directory_
+                                    " TODO(clason): use nvim__get_runtime when supports globs and modeline
+                                    " XXX: "[.]" in the first pattern makes it a wildcard on Windows
+   23              0.043463         exe $'runtime! ftplugin/{name}[.]{{vim,lua}} ftplugin/{name}_*.{{vim,lua}} ftplugin/{name}/*.{{vim,lua}}'
+   46              0.000044       endfor
+   23              0.000012     endif
+
+FUNCTION  ctrlp#utils#writecache()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/utils.vim:63
+Called 1 time
+Total time:   0.190889
+ Self time:   0.190885
+
+count  total (s)   self (s)
+    1   0.000009   0.000004 	if isdirectory(ctrlp#utils#mkdir(a:0 ? a:1 : s:cache_dir))
+    1              0.190872 		sil! cal writefile(a:lines, a:0 >= 2 ? a:2 : ctrlp#utils#cachefile())
+    1              0.000006 	en
+
+FUNCTION  <SNR>71_addtomrufs()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:70
+Called 3 times
+Total time:   0.000541
+ Self time:   0.000541
+
+count  total (s)   self (s)
+    3              0.000120 	let fn = fnamemodify(a:fname, get(g:, 'ctrlp_tilde_homedir', 0) ? ':p:~' : ':p')
+    3              0.000032 	let fn = exists('+ssl') ? tr(fn, '/', '\') : fn
+    3              0.000027 	let abs_fn = fnamemodify(fn,':p')
+    3              0.000228 	if ( !empty({s:in}) && fn !~# {s:in} ) || ( !empty({s:ex}) && fn =~# {s:ex} ) || !empty(getbufvar('^' . abs_fn . '$', '&bt')) || !filereadable(abs_fn)
+                            		retu
+    3              0.000004 	en
+    3              0.000036 	let idx = index(s:mrufs, fn, 0, !{s:cseno})
+    3              0.000005 	if idx
+                            		cal filter(s:mrufs, 'v:val !='.( {s:cseno} ? '#' : '?' ).' fn')
+                            		cal insert(s:mrufs, fn)
+                            		if {s:soup} && idx < 0
+                            			cal s:savetofile(s:mergelists())
+                            		en
+    3              0.000003 	en
+
+FUNCTION  <SNR>3_LoadIndent()
+    Defined: /nix/store/q570k9f80p21sbr4x74vbggjxhg82brz-neovim-unwrapped-0.11.2/share/nvim/runtime/indent.vim:14
+Called 23 times
+Total time:   0.012452
+ Self time:   0.012452
+
+count  total (s)   self (s)
+   23              0.000048     if exists("b:undo_indent")
+                                  exe b:undo_indent
+                                  unlet! b:undo_indent b:did_indent
+   23              0.000009     endif
+   23              0.000057     let s = expand("<amatch>")
+   23              0.000026     if s != ""
+   23              0.000026       if exists("b:did_indent")
+                            	unlet b:did_indent
+   23              0.000008       endif
+                            
+                                  " When there is a dot it is used to separate filetype names.  Thus for
+                                  " "aaa.bbb" load "indent/aaa.vim" and then "indent/bbb.vim".
+   46              0.000090       for name in split(s, '\.')
+                                    " XXX: "[.]" in the pattern makes it a wildcard on Windows
+   23              0.012005         exe $'runtime! indent/{name}[.]{{vim,lua}}'
+   46              0.000044       endfor
+   23              0.000009     endif
+
+FUNCTION  <SNR>71_chop()
+    Defined: /nix/store/mckn6dw50gy5xxmb7c2cbfbfxj89pm2j-vimplugin-ctrlp.vim-2024-10-21/autoload/ctrlp/mrufiles.vim:38
+Called 1 time
+Total time:   0.000005
+ Self time:   0.000005
+
+count  total (s)   self (s)
+    1              0.000004 	if len(a:mrufs) > {s:max} | cal remove(a:mrufs, {s:max}, -1) | en
+    1              0.000000 	retu a:mrufs
+
+FUNCTION  <SNR>68_FindLet()
+    Defined: /nix/store/ikw71sas1hfg063wp910za320c3q0cjm-vimplugin-vim-ocaml-2024-03-22/indent/ocaml.vim:89
+Called 1 time
+Total time:   0.000199
+ Self time:   0.000199
+
+count  total (s)   self (s)
+    1              0.000031  call search(a:pend, 'bW')
+    1              0.000166  return indent(searchpair(a:pstart, a:pmid, a:pend, 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment" || getline(".") =~ "^\\s*let\\>.*=.*\\<in\\s*$" || getline(prevnonblank(".") - 1) =~ s:beflet'))
+
+FUNCTION  GetOCamlIndent()
+    Defined: /nix/store/ikw71sas1hfg063wp910za320c3q0cjm-vimplugin-vim-ocaml-2024-03-22/indent/ocaml.vim:94
+Called 6 times
+Total time:   0.003804
+ Self time:   0.003144
+
+count  total (s)   self (s)
+                             " Find a non-commented line above the current line.
+    6   0.000668   0.000207  let lnum = s:GetLineWithoutFullComment(v:lnum)
+                            
+                             " At the start of the file use zero indent.
+    6              0.000019  if lnum == 0
+                               return 0
+    6              0.000009  endif
+                            
+    6              0.000032  let ind = indent(lnum)
+    6              0.000088  let lline = substitute(getline(lnum), '(\*.*\*)\s*$', '', '')
+                            
+                             " Return double 'shiftwidth' after lines matching:
+    6              0.000061  if lline =~ '^\s*|.*->\s*$'
+                               return ind + 2 * shiftwidth()
+    6              0.000006  endif
+                            
+    6              0.000025  let line = getline(v:lnum)
+                            
+                             " Indent if current line begins with 'end':
+    6              0.000050  if line =~ '^\s*end\>'
+                               return s:FindPair(s:module, '','\<end\>')
+                            
+                             " Indent if current line begins with 'done' for 'do':
+    6              0.000048  elseif line =~ '^\s*done\>'
+                               return s:FindPair('\<do\>', '','\<done\>')
+                            
+                             " Indent if current line begins with '}' or '>}':
+    6              0.000068  elseif line =~ '^\s*\(\|>\)}'
+                               return s:FindPair('{', '','}')
+                            
+                             " Indent if current line begins with ']', '|]' or '>]':
+    6              0.000060  elseif line =~ '^\s*\(\||\|>\)\]'
+                               return s:FindPair('\[', '','\]')
+                            
+                             " Indent if current line begins with ')':
+    6              0.000033  elseif line =~ '^\s*)'
+                               return s:FindPair('(', '',')')
+                            
+                             " Indent if current line begins with 'let':
+    6              0.000038  elseif line =~ '^\s*let\>'
+    2              0.000140    if lline !~ s:lim . '\|' . s:letlim . '\|' . s:beflet
+    1   0.000219   0.000020      return s:FindLet(s:type, '','\<let\s*$')
+    1              0.000002    endif
+                            
+                             " Indent if current line begins with 'class' or 'type':
+    4              0.000043  elseif line =~ '^\s*\(class\|type\)\>'
+                               if lline !~ s:lim . '\|\<and\s*$\|' . s:letlim
+                                 return s:FindLet(s:type, '','\<\(class\|type\)\s*$')
+                               endif
+                            
+                             " Indent for pattern matching:
+    4              0.000018  elseif line =~ '^\s*|'
+                               if lline !~ '^\s*\(|[^\]]\|\(match\|type\|with\)\>\)\|\<\(function\|parser\|private\|with\)\s*$'
+                                 call search('|', 'bW')
+                                 return indent(searchpair('^\s*\(match\|type\)\>\|\<\(function\|parser\|private\|with\)\s*$', '', '^\s*|', 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string\\|comment" || getline(".") !~ "^\\s*|.*->"'))
+                               endif
+                            
+                             " Indent if current line begins with ';;':
+    4              0.000027  elseif line =~ '^\s*;;'
+                               if lline !~ ';;\s*$'
+                                 return s:GetInd(v:lnum, s:letpat, s:letlim)
+                               endif
+                            
+                             " Indent if current line begins with 'in':
+    4              0.000021  elseif line =~ '^\s*in\>'
+                               if lline !~ '^\s*\(let\|and\)\>'
+                                 return s:FindPair('\<let\>', '', '\<in\>')
+                               endif
+                            
+                             " Indent if current line begins with 'else':
+    4              0.000023  elseif line =~ '^\s*else\>'
+                               if lline !~ '^\s*\(if\|then\)\>'
+                                 return s:FindPair('\<if\>', '', '\<else\>')
+                               endif
+                            
+                             " Indent if current line begins with 'then':
+    4              0.000018  elseif line =~ '^\s*then\>'
+                               if lline !~ '^\s*\(if\|else\)\>'
+                                 return s:FindPair('\<if\>', '', '\<then\>')
+                               endif
+                            
+                             " Indent if current line begins with 'and':
+    4              0.000018  elseif line =~ '^\s*and\>'
+                               if lline !~ '^\s*\(and\|let\|type\)\>\|\<end\s*$'
+                                 return ind - shiftwidth()
+                               endif
+                            
+                             " Indent if current line begins with 'with':
+    4              0.000018  elseif line =~ '^\s*with\>'
+                               if lline !~ '^\s*\(match\|try\)\>'
+                                 return s:FindPair('\<\%(match\|try\)\>', '','\<with\>')
+                               endif
+                            
+                             " Indent if current line begins with 'exception', 'external', 'include' or
+                             " 'open':
+    4              0.000067  elseif line =~ '^\s*\(exception\|external\|include\|open\)\>'
+                               if lline !~ s:lim . '\|' . s:letlim
+                                 call search(line)
+                                 return indent(search('^\s*\(\(exception\|external\|include\|open\|type\)\>\|val\>.*:\)', 'bW'))
+                               endif
+                            
+                             " Indent if current line begins with 'val':
+    4              0.000020  elseif line =~ '^\s*val\>'
+                               if lline !~ '^\s*\(exception\|external\|include\|open\)\>\|' . s:obj . '\|' . s:letlim
+                                 return indent(search('^\s*\(\(exception\|include\|initializer\|method\|open\|type\|val\)\>\|external\>.*:\)', 'bW'))
+                               endif
+                            
+                             " Indent if current line begins with 'constraint', 'inherit', 'initializer'
+                             " or 'method':
+    4              0.000051  elseif line =~ '^\s*\(constraint\|inherit\|initializer\|method\)\>'
+                               if lline !~ s:obj
+                                 return indent(search('\<\(object\|object\s*(.*)\)\s*$', 'bW')) + shiftwidth()
+                               endif
+                            
+    5              0.000005  endif
+                            
+                             " Add a 'shiftwidth' after lines ending with:
+    5              0.000485  if lline =~ '\(:\|=\|->\|<-\|(\|\[\|{\|{<\|\[|\|\[<\|\<\(begin\|do\|else\|fun\|function\|functor\|if\|initializer\|object\|parser\|private\|sig\|struct\|then\|try\)\|\<object\s*(.*)\)\s*$'
+    3              0.000022    let ind = ind + shiftwidth()
+                            
+                             " Back to normal indent after lines ending with ';;':
+    2              0.000011  elseif lline =~ ';;\s*$' && lline !~ '^\s*;;'
+                               let ind = s:GetInd(v:lnum, s:letpat, s:letlim)
+                            
+                             " Back to normal indent after lines ending with 'end':
+    2              0.000009  elseif lline =~ '\<end\s*$'
+                               let ind = s:FindPair(s:module, '','\<end\>')
+                            
+                             " Back to normal indent after lines ending with 'in':
+    2              0.000012  elseif lline =~ '\<in\s*$' && lline !~ '^\s*in\>'
+                               let ind = s:FindPair('\<let\>', '', '\<in\>')
+                            
+                             " Back to normal indent after lines ending with 'done':
+    2              0.000008  elseif lline =~ '\<done\s*$'
+                               let ind = s:FindPair('\<do\>', '','\<done\>')
+                            
+                             " Back to normal indent after lines ending with '}' or '>}':
+    2              0.000020  elseif lline =~ '\(\|>\)}\s*$'
+                               let ind = s:FindPair('{', '','}')
+                            
+                             " Back to normal indent after lines ending with ']', '|]' or '>]':
+    2              0.000022  elseif lline =~ '\(\||\|>\)\]\s*$'
+                               let ind = s:FindPair('\[', '','\]')
+                            
+                             " Back to normal indent after comments:
+    2              0.000008  elseif lline =~ '\*)\s*$'
+                               call search('\*)', 'bW')
+                               let ind = indent(searchpair('(\*', '', '\*)', 'bWn', 'synIDattr(synID(line("."), col("."), 0), "name") =~? "string"'))
+                            
+                             " Back to normal indent after lines ending with ')':
+    2              0.000007  elseif lline =~ ')\s*$'
+                               let ind = s:FindPair('(', '',')')
+                            
+                             " If this is a multiline comment then align '*':
+    2              0.000013  elseif lline =~ '^\s*(\*' && line =~ '^\s*\*'
+                               let ind = ind + 1
+                            
+    2              0.000002  else
+                             " Don't change indentation of this line
+                             " for new lines (indent==0) use indentation of previous line
+                            
+                             " This is for preventing removing indentation of these args:
+                             "   let f x =
+                             "     let y = x + 1 in
+                             "     Printf.printf
+                             "       "o"           << here
+                             "       "oeuth"       << don't touch indentation
+                            
+    2              0.000007    let i = indent(v:lnum)
+    2              0.000006    return i == 0 ? ind : i
+                            
+    3              0.000004  endif
+                            
+                             " Subtract a 'shiftwidth' after lines matching 'match ... with parser':
+    3              0.000046  if lline =~ '\<match\>.*\<with\>\s*\<parser\s*$'
+                               let ind = ind - shiftwidth()
+    3              0.000003  endif
+                            
+    3              0.000009  return ind
+                            
+
+FUNCTIONS SORTED ON TOTAL TIME
+count  total (s)   self (s)  function
+    1   0.190897   0.000008  <SNR>71_savetofile()
+    1   0.190889   0.190885  ctrlp#utils#writecache()
+   23   0.044206             <SNR>2_LoadFTPlugin()
+  175   0.040995   0.037441  <SNR>16_Highlight_Matching_Pair()
+   23   0.024943             <SNR>12_SynSet()
+   23   0.012452             <SNR>3_LoadIndent()
+    2   0.009863   0.000197  provider#clipboard#Call()
+    2   0.009666             3()
+    6   0.003804   0.003144  GetOCamlIndent()
+  175   0.003554             <SNR>16_Remove_Matches()
+   52   0.001802   0.001261  <SNR>71_record()
+    3   0.000541             <SNR>71_addtomrufs()
+    6   0.000461             <SNR>68_GetLineWithoutFullComment()
+    1   0.000199             <SNR>68_FindLet()
+    1   0.000085   0.000041  <SNR>71_mergelists()
+    1   0.000032             ctrlp#utils#readfile()
+    2   0.000025             1()
+    1   0.000007             ctrlp#mrufiles#cachefile()
+    1   0.000005             <SNR>71_chop()
+    1   0.000005             ctrlp#utils#mkdir()
+
+FUNCTIONS SORTED ON SELF TIME
+count  total (s)   self (s)  function
+    1   0.190889   0.190885  ctrlp#utils#writecache()
+   23              0.044206  <SNR>2_LoadFTPlugin()
+  175   0.040995   0.037441  <SNR>16_Highlight_Matching_Pair()
+   23              0.024943  <SNR>12_SynSet()
+   23              0.012452  <SNR>3_LoadIndent()
+    2              0.009666  3()
+  175              0.003554  <SNR>16_Remove_Matches()
+    6   0.003804   0.003144  GetOCamlIndent()
+   52   0.001802   0.001261  <SNR>71_record()
+    3              0.000541  <SNR>71_addtomrufs()
+    6              0.000461  <SNR>68_GetLineWithoutFullComment()
+    1              0.000199  <SNR>68_FindLet()
+    2   0.009863   0.000197  provider#clipboard#Call()
+    1   0.000085   0.000041  <SNR>71_mergelists()
+    1              0.000032  ctrlp#utils#readfile()
+    2              0.000025  1()
+    1   0.190897   0.000008  <SNR>71_savetofile()
+    1              0.000007  ctrlp#mrufiles#cachefile()
+    1              0.000005  <SNR>71_chop()
+    1              0.000005  ctrlp#utils#mkdir()
+

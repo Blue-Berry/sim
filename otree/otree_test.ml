@@ -1,5 +1,6 @@
 open! Core
 open! Otree
+module Bb = Otree.Bb
 
 let bb = Bb.{ x_min = -1.; x_max = 1.; y_min = -1.; y_max = 1.; z_min = -1.; z_max = 1. }
 

@@ -7,6 +7,7 @@ module Int126 = struct
     { high : int (* Most significant 63 bits *)
     ; low : int (* Least significant 63 bits *)
     }
+  [@@deriving sexp]
 
   let zero = { high = 0; low = 0 }
   let one = { high = 0; low = 1 }

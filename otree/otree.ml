@@ -156,10 +156,12 @@ let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
 module LinearOctree = struct
   module Int126 = Morton126.Int126
 
-  module MortonMap = Stdlib.Map.Make (struct
+  module MortonMap = Map.Make (struct
       type t = Int126.t
 
       let compare = Int126.compare
+      let t_of_sexp = Int126.t_of_sexp
+      let sexp_of_t = Int126.sexp_of_t
     end)
 
   type 'a entry =
@@ -178,11 +180,11 @@ module LinearOctree = struct
     let morton = Morton126.encode_point point octree.bounds in
     let entry = { point; value } in
     let existing =
-      match MortonMap.find_opt morton octree.data with
+      match Map.find octree.data morton with
       | None -> []
       | Some entries -> entries
     in
-    let updated_data = MortonMap.add morton (entry :: existing) octree.data in
+    let updated_data = Map.set ~key:morton ~data:(entry :: existing) octree.data in
     { octree with data = updated_data }
   ;;
 
@@ -195,27 +197,27 @@ module LinearOctree = struct
     in
     let min_morton = Morton126.encode_point min_point octree.bounds in
     let max_morton = Morton126.encode_point max_point octree.bounds in
-    MortonMap.fold
-      (fun morton entries acc ->
-         if Int126.compare morton min_morton >= 0 && Int126.compare morton max_morton <= 0
-         then (
-           let filtered =
-             List.filter
-               ~f:(fun entry ->
-                 let open Physics in
-                 let open Float in
-                 entry.point.%{`x} >= query_bounds.x_min
-                 && entry.point.%{`x} <= query_bounds.x_max
-                 && entry.point.%{`y} >= query_bounds.y_min
-                 && entry.point.%{`y} <= query_bounds.y_max
-                 && entry.point.%{`z} >= query_bounds.z_min
-                 && entry.point.%{`z} <= query_bounds.z_max)
-               entries
-           in
-           List.rev_append filtered acc)
-         else acc)
+    Map.fold
+      ~f:(fun ~key:morton ~data:entries acc ->
+        if Int126.compare morton min_morton >= 0 && Int126.compare morton max_morton <= 0
+        then (
+          let filtered =
+            List.filter
+              ~f:(fun entry ->
+                let open Physics in
+                let open Float in
+                entry.point.%{`x} >= query_bounds.x_min
+                && entry.point.%{`x} <= query_bounds.x_max
+                && entry.point.%{`y} >= query_bounds.y_min
+                && entry.point.%{`y} <= query_bounds.y_max
+                && entry.point.%{`z} >= query_bounds.z_min
+                && entry.point.%{`z} <= query_bounds.z_max)
+              entries
+          in
+          List.rev_append filtered acc)
+        else acc)
+      ~init:[]
       octree.data
-      []
   ;;
 
   let nearest_neighbor query_point k octree =
@@ -227,7 +229,8 @@ module LinearOctree = struct
       (dx *. dx) +. (dy *. dy) +. (dz *. dz)
     in
     let all_entries =
-      MortonMap.fold (fun _ entries acc -> List.rev_append entries acc) octree.data []
+      Map.fold octree.data ~init:[] ~f:(fun ~key:_ ~data:entries acc ->
+        List.rev_append entries acc)
     in
     let sorted =
       List.sort
@@ -254,11 +257,13 @@ module LinearOctree = struct
   ;;
 
   let to_list octree =
-    MortonMap.fold (fun _ entries acc -> List.rev_append entries acc) octree.data []
+    Map.fold octree.data ~init:[] ~f:(fun ~key:_ ~data:entries acc ->
+      List.rev_append entries acc)
   ;;
 
   let size octree =
-    MortonMap.fold (fun _ entries acc -> acc + List.length entries) octree.data 0
+    Map.fold octree.data ~init:0 ~f:(fun ~key:_ ~data:entries acc ->
+      acc + List.length entries)
   ;;
 end
 

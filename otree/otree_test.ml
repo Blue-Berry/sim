@@ -60,29 +60,21 @@ let%expect_test "parent_bb" =
 
 let%expect_test "octant_of_point" =
   print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 0.5 0.5) bb : Bb.octant)];
-  [%expect
-    {| O1 |}];
+  [%expect {| O1 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) 0.5 0.5) bb : Bb.octant)];
-  [%expect
-    {| O2 |}];
+  [%expect {| O2 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 (-0.5) 0.5) bb : Bb.octant)];
-  [%expect
-    {| O3 |}];
+  [%expect {| O3 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) (-0.5) 0.5) bb : Bb.octant)];
-  [%expect
-    {| O4 |}];
+  [%expect {| O4 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 0.5 (-0.5)) bb : Bb.octant)];
-  [%expect
-    {| O5 |}];
+  [%expect {| O5 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) 0.5 (-0.5)) bb : Bb.octant)];
-  [%expect
-    {| O6 |}];
+  [%expect {| O6 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point 0.5 (-0.5) (-0.5)) bb : Bb.octant)];
-  [%expect
-    {| O7 |}];
+  [%expect {| O7 |}];
   print_s [%sexp (Bb.octant_of_point (Physics.point (-0.5) (-0.5) (-0.5)) bb : Bb.octant)];
-  [%expect
-    {| O8 |}]
+  [%expect {| O8 |}]
 ;;
 
 let%expect_test "centroid add" =
@@ -156,7 +148,8 @@ let%expect_test "insert_tree" =
   let c = C.{ p = Physics.point 0.5 0.5 (-0.7); m = 1. } in
   Otree.insert_body tree c bb;
   Otree.print_tree tree;
-  [%expect {|
+  [%expect
+    {|
     Tree:
     size: 7
     capacity: 10

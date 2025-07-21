@@ -62,69 +62,65 @@ module Int126 = struct
   ;;
 end
 
-module Morton126 = struct
-  type t = Int126.t
+type t = Int126.t
 
-  let precision = 126 / 3
+let precision = 126 / 3
 
-  let encode x y z =
-    let rec interleave acc x y z depth =
-      if depth = 0
-      then acc
-      else (
-        (* Extract bits using fast native operations *)
-        let mask = 1 lsl (depth - 1) in
-        let bit_x = x land mask in
-        let bit_y = y land mask in
-        let bit_z = z land mask in
-        (* Pack bits efficiently *)
-        let acc_shifted = Int126.shift_left acc 3 in
-        let bits_packed =
-          (if bit_z <> 0 then 4 else 0)
-          lor (if bit_y <> 0 then 2 else 0)
-          lor if bit_x <> 0 then 1 else 0
-        in
-        let combined = Int126.logor acc_shifted (Int126.of_int bits_packed) in
-        interleave combined x y z (depth - 1))
-    in
-    interleave Int126.zero x y z precision
-  ;;
+let encode x y z =
+  let rec interleave acc x y z depth =
+    if depth = 0
+    then acc
+    else (
+      (* Extract bits using fast native operations *)
+      let mask = 1 lsl (depth - 1) in
+      let bit_x = x land mask in
+      let bit_y = y land mask in
+      let bit_z = z land mask in
+      (* Pack bits efficiently *)
+      let acc_shifted = Int126.shift_left acc 3 in
+      let bits_packed =
+        (if bit_z <> 0 then 4 else 0)
+        lor (if bit_y <> 0 then 2 else 0)
+        lor if bit_x <> 0 then 1 else 0
+      in
+      let combined = Int126.logor acc_shifted (Int126.of_int bits_packed) in
+      interleave combined x y z (depth - 1))
+  in
+  interleave Int126.zero x y z precision
+;;
 
-  let decode morton =
-    let rec extract_bits morton depth x_acc y_acc z_acc =
-      if depth = 0
-      then x_acc, y_acc, z_acc
-      else (
-        let bit_x = if Int126.test_bit morton 0 then 1 lsl (depth - 1) else 0 in
-        let bit_y = if Int126.test_bit morton 1 then 1 lsl (depth - 1) else 0 in
-        let bit_z = if Int126.test_bit morton 2 then 1 lsl (depth - 1) else 0 in
-        extract_bits
-          (Int126.shift_right_logical morton 3)
-          (depth - 1)
-          (x_acc lor bit_x)
-          (y_acc lor bit_y)
-          (z_acc lor bit_z))
-    in
-    extract_bits morton precision 0 0 0
-  ;;
+let decode morton =
+  let rec extract_bits morton depth x_acc y_acc z_acc =
+    if depth = 0
+    then x_acc, y_acc, z_acc
+    else (
+      let bit_x = if Int126.test_bit morton 0 then 1 lsl (depth - 1) else 0 in
+      let bit_y = if Int126.test_bit morton 1 then 1 lsl (depth - 1) else 0 in
+      let bit_z = if Int126.test_bit morton 2 then 1 lsl (depth - 1) else 0 in
+      extract_bits
+        (Int126.shift_right_logical morton 3)
+        (depth - 1)
+        (x_acc lor bit_x)
+        (y_acc lor bit_y)
+        (z_acc lor bit_z))
+  in
+  extract_bits morton precision 0 0 0
+;;
 
-  (* Float coordinate conversion *)
-  let point_to_grid (p : Physics.point) (bounds : Bb.t) =
-    let open Physics in
-    let max_coord = (1 lsl precision) - 1 in
-    let x_norm = (p.%{`x} -. bounds.x_min) /. (bounds.x_max -. bounds.x_min) in
-    let y_norm = (p.%{`y} -. bounds.y_min) /. (bounds.y_max -. bounds.y_min) in
-    let z_norm = (p.%{`z} -. bounds.z_min) /. (bounds.z_max -. bounds.z_min) in
-    let x_grid = max 0 (min max_coord (int_of_float (x_norm *. float max_coord))) in
-    let y_grid = max 0 (min max_coord (int_of_float (y_norm *. float max_coord))) in
-    let z_grid = max 0 (min max_coord (int_of_float (z_norm *. float max_coord))) in
-    x_grid, y_grid, z_grid
-  ;;
+(* Float coordinate conversion *)
+let point_to_grid (p : Physics.point) (bounds : Bb.t) =
+  let open Physics in
+  let max_coord = (1 lsl precision) - 1 in
+  let x_norm = (p.%{`x} -. bounds.x_min) /. (bounds.x_max -. bounds.x_min) in
+  let y_norm = (p.%{`y} -. bounds.y_min) /. (bounds.y_max -. bounds.y_min) in
+  let z_norm = (p.%{`z} -. bounds.z_min) /. (bounds.z_max -. bounds.z_min) in
+  let x_grid = max 0 (min max_coord (int_of_float (x_norm *. float max_coord))) in
+  let y_grid = max 0 (min max_coord (int_of_float (y_norm *. float max_coord))) in
+  let z_grid = max 0 (min max_coord (int_of_float (z_norm *. float max_coord))) in
+  x_grid, y_grid, z_grid
+;;
 
-  let encode_point point bounds =
-    let x_grid, y_grid, z_grid = point_to_grid point bounds in
-    encode x_grid y_grid z_grid
-  ;;
-end
-
-include Morton126
+let encode_point point bounds =
+  let x_grid, y_grid, z_grid = point_to_grid point bounds in
+  encode x_grid y_grid z_grid
+;;

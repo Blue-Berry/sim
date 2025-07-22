@@ -6,8 +6,6 @@ module Int126 : sig
     ; low : int
     }
 
-  val t_of_sexp : Base.Sexp.t -> t
-  val sexp_of_t : t -> Base.Sexp.t
   val zero : t
   val one : t
   val max_63_bit : int
@@ -22,7 +20,10 @@ module Int126 : sig
   val equal : t -> t -> bool
   val test_bit : t -> int -> bool
   val to_hex : t -> string
+  val of_hex : string -> t
   val to_string : t -> string
+  val sexp_of_t : t -> Sexplib0.Sexp.t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 end
 
 type t = Int126.t

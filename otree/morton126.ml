@@ -7,7 +7,6 @@ module Int126 = struct
     { high : int (* Most significant 63 bits *)
     ; low : int (* Least significant 63 bits *)
     }
-  [@@deriving sexp]
 
   let zero = { high = 0; low = 0 }
   let one = { high = 0; low = 1 }
@@ -56,11 +55,24 @@ module Int126 = struct
     else (t.low lsr bit_pos) land 1 = 1
   ;;
 
-  let to_hex t = Printf.sprintf "%015x%015x" t.high t.low
+  let to_hex t = Printf.sprintf "0x%015x%015x" t.high t.low
+
+  let of_hex s =
+    let high_hex = "0x" ^ String.sub s ~pos:2 ~len:15 in
+    let high = Int.Hex.of_string high_hex in
+    let low_hex = "0x" ^ String.sub s ~pos:17 ~len:15 in
+    let low = Int.Hex.of_string low_hex in
+    { low; high }
+  ;;
 
   let to_string t =
     if t.high = 0 then string_of_int t.low else Printf.sprintf "%d%015d" t.high t.low
   ;;
+
+  let sexp_of_t t = Sexp.of_string (to_hex t)
+  let t_of_sexp s = of_hex (Sexp.to_string s)
+
+  (* let t_of_sexp s = *)
 end
 
 type t = Int126.t
@@ -69,9 +81,9 @@ let bits_per_dimension = 126 / 3
 
 let encode x y z =
   let rec interleave acc x y z depth =
-    if depth = 0
-    then acc
-    else (
+    match depth with
+    | 0 -> acc
+    | _ ->
       (* Extract bits using fast native operations *)
       let mask = 1 lsl (depth - 1) in
       let bit_x = x land mask in
@@ -85,7 +97,7 @@ let encode x y z =
         lor if bit_x <> 0 then 1 else 0
       in
       let combined = Int126.logor acc_shifted (Int126.of_int bits_packed) in
-      interleave combined x y z (depth - 1))
+      interleave combined x y z (depth - 1)
   in
   interleave Int126.zero x y z bits_per_dimension
 ;;

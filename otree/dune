@@ -37,3 +37,14 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
+
+
+
+
+(library
+ (name morton126_test)
+ (modules morton126_test)
+ (libraries core utils)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

@@ -28,6 +28,15 @@ module Physics = struct
   let print v = Format.fprintf Format.std_formatter "%a\n" pp v
   let displace (p : point) (v : vec) = add_ p v
 
+  let sexp_of_point (p : point) =
+    Sexp.(
+      List
+        [ List [ Atom "x"; Float.sexp_of_t p.%{`x} ]
+        ; List [ Atom "y"; Float.sexp_of_t p.%{`y} ]
+        ; List [ Atom "z"; Float.sexp_of_t p.%{`z} ]
+        ])
+  ;;
+
   (* let mag_sq v : float = v |> sqr |> sum_cols |> trace *)
   let mag_sq : vec -> float = fun v -> v |> sqr |> sum_cols |> trace
 

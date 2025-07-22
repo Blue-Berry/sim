@@ -28,3 +28,12 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
+
+
+(library
+ (name lmotree_test)
+ (modules lmotree_test)
+ (libraries lmotree core utils)
+ (inline_tests)
+ (preprocess
+  (pps ppx_jane)))

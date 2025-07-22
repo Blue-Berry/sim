@@ -5,6 +5,7 @@ type t =
   { p : Physics.point
   ; m : float
   }
+[@@deriving sexp_of]
 
 let pp fmt (c : t) = Format.fprintf fmt "P: %a M: %.2f" Physics.pp c.p c.m
 let empty = { p = Physics.zero; m = 0. }

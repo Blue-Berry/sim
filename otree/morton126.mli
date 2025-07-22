@@ -27,8 +27,16 @@ end
 
 type t = Int126.t
 
-val precision : int
+val bits_per_dimension : int
 val encode : int -> int -> int -> Int126.t
 val decode : Int126.t -> int * int * int
 val point_to_grid : Physics.point -> Bb.t -> int * int * int
+
+(* Float coordinate conversion *)
 val encode_point : Physics.point -> Bb.t -> Int126.t
+
+(* Get parent Morton code by removing 3 least significant bits *)
+val parent_morton : Int126.t -> Int126.t
+
+(* Get Morton code at specific level (0 = leaf, higher = more aggregated) *)
+val morton_at_level : Int126.t -> int -> Int126.t

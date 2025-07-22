@@ -65,7 +65,7 @@ end
 
 type t = Int126.t
 
-let precision = 126 / 3
+let bits_per_dimension = 126 / 3
 
 let encode x y z =
   let rec interleave acc x y z depth =
@@ -87,7 +87,7 @@ let encode x y z =
       let combined = Int126.logor acc_shifted (Int126.of_int bits_packed) in
       interleave combined x y z (depth - 1))
   in
-  interleave Int126.zero x y z precision
+  interleave Int126.zero x y z bits_per_dimension
 ;;
 
 let decode morton =
@@ -105,13 +105,12 @@ let decode morton =
         (y_acc lor bit_y)
         (z_acc lor bit_z))
   in
-  extract_bits morton precision 0 0 0
+  extract_bits morton bits_per_dimension 0 0 0
 ;;
 
-(* Float coordinate conversion *)
 let point_to_grid (p : Physics.point) (bounds : Bb.t) =
   let open Physics in
-  let max_coord = (1 lsl precision) - 1 in
+  let max_coord = (1 lsl bits_per_dimension) - 1 in
   let x_norm = (p.%{`x} -. bounds.x_min) /. (bounds.x_max -. bounds.x_min) in
   let y_norm = (p.%{`y} -. bounds.y_min) /. (bounds.y_max -. bounds.y_min) in
   let z_norm = (p.%{`z} -. bounds.z_min) /. (bounds.z_max -. bounds.z_min) in
@@ -125,3 +124,6 @@ let encode_point point bounds =
   let x_grid, y_grid, z_grid = point_to_grid point bounds in
   encode x_grid y_grid z_grid
 ;;
+
+let parent_morton morton = Int126.shift_right_logical morton 3
+let morton_at_level morton level = Int126.shift_right_logical morton (level * 3)

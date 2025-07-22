@@ -40,6 +40,7 @@ module Physics = struct
     v /$ norm
   ;;
 
+  (* [v1 --> v2] Vec from [v1] to [v2] *)
   let ( --> ) (v1 : point) (v2 : point) : vec = v2 - v1
   let zero : vec = zeros 1 3
 

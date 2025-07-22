@@ -1,153 +1,213 @@
 open! Core
 module Physics = Body.Physics
+module C = Centroid
+module Int126 = Morton126.Int126
 
-module LinearOctree = struct
-  module Int126 = Morton126.Int126
+module MortonMap = Map.Make (struct
+    type t = Int126.t
 
-  module MortonMap = Map.Make (struct
-      type t = Int126.t
+    let compare = Int126.compare
+    let t_of_sexp = Int126.t_of_sexp
+    let sexp_of_t = Int126.sexp_of_t
+  end)
 
-      let compare = Int126.compare
-      let t_of_sexp = Int126.t_of_sexp
-      let sexp_of_t = Int126.sexp_of_t
-    end)
+type region =
+  { centroid : C.t
+  ; bodies : int
+  ; size : float
+  }
 
-  type 'a entry =
-    { point : Physics.point
-    ; value : 'a
-    }
+type t =
+  { bodies : C.t list MortonMap.t
+  ; regions : region MortonMap.t
+  ; bounds : Bb.t
+  ; theta : float (* Barnes-Hut approximation parameter *)
+  }
 
-  type 'a t =
-    { data : 'a entry list MortonMap.t
-    ; bounds : Bb.t
-    }
+(* Calculate physical size of a region at given level *)
+let region_size (bounds : Bb.t) ~level ~bits_per_dimension =
+  let total_size =
+    Float.max
+      Bb.(bounds.x_max -. bounds.x_min)
+      Bb.(Float.max (bounds.y_max -. bounds.y_min) (bounds.z_max -. bounds.z_min))
+  in
+  total_size /. Owl.Maths.pow 2.0 (Float.of_int (bits_per_dimension - level))
+;;
 
-  let create bounds = { data = MortonMap.empty; bounds }
+(* Create empty tree *)
+let create bounds theta =
+  { bodies = MortonMap.empty; regions = MortonMap.empty; bounds; theta }
+;;
 
-  let insert point value octree =
-    let morton = Morton126.encode_point point octree.bounds in
-    let entry = { point; value } in
-    let existing =
-      match Map.find octree.data morton with
-      | None -> []
-      | Some entries -> entries
-    in
-    let updated_data = Map.set ~key:morton ~data:(entry :: existing) octree.data in
-    { octree with data = updated_data }
-  ;;
+(* Insert particle (just add to leaf - don't calculate aggregates yet) *)
+let insert_body (body : C.t) tree =
+  let morton = Morton126.encode_point body.p tree.bounds in
+  let existing_bodies = Map.find tree.bodies morton |> Option.value ~default:[] in
+  let updated_bodies = Map.set tree.bodies ~key:morton ~data:(body :: existing_bodies) in
+  { tree with bodies = updated_bodies }
+;;
 
-  let range_query (query_bounds : Bb.t) octree =
-    let min_point =
-      Physics.point query_bounds.x_min query_bounds.y_min query_bounds.z_min
-    in
-    let max_point =
-      Physics.point query_bounds.x_min query_bounds.y_min query_bounds.z_min
-    in
-    let min_morton = Morton126.encode_point min_point octree.bounds in
-    let max_morton = Morton126.encode_point max_point octree.bounds in
-    Map.fold
-      ~f:(fun ~key:morton ~data:entries acc ->
-        if Int126.compare morton min_morton >= 0 && Int126.compare morton max_morton <= 0
-        then (
-          let filtered =
-            List.filter
-              ~f:(fun entry ->
-                let open Physics in
-                let open Float in
-                entry.point.%{`x} >= query_bounds.x_min
-                && entry.point.%{`x} <= query_bounds.x_max
-                && entry.point.%{`y} >= query_bounds.y_min
-                && entry.point.%{`y} <= query_bounds.y_max
-                && entry.point.%{`z} >= query_bounds.z_min
-                && entry.point.%{`z} <= query_bounds.z_max)
-              entries
+let insert_bodies bodies tree =
+  List.fold bodies ~init:tree ~f:(fun acc particle -> insert_body particle acc)
+;;
+
+(* Build aggregates ONCE after all bodies are inserted *)
+let build_aggregates tree =
+  let regions = ref MortonMap.empty in
+  (* First pass: collect all bodies by their parent regions at each level *)
+  Map.iteri tree.bodies ~f:(fun ~key:morton ~data:bodies ->
+    List.iter bodies ~f:(fun body ->
+      (* Update all levels from leaf to root *)
+      for level = 1 to Morton126.bits_per_dimension do
+        let region_morton = Morton126.morton_at_level morton level in
+        let existing = Map.find !regions region_morton |> Option.value ~default:[] in
+        regions := Map.set !regions ~key:region_morton ~data:(body :: existing)
+      done));
+  (* Second pass: calculate aggregate data for each region *)
+  let final_regions =
+    Map.mapi !regions ~f:(fun ~key:region_morton ~data:bodies ->
+      let centroid = List.fold bodies ~init:C.empty ~f:(fun acc p -> C.add acc p) in
+      let level =
+        Morton126.bits_per_dimension
+        - ((Int.popcount region_morton.high + Int.popcount region_morton.low) / 3)
+      in
+      { centroid
+      ; bodies = List.length bodies
+      ; size =
+          region_size tree.bounds ~level ~bits_per_dimension:Morton126.bits_per_dimension
+      })
+  in
+  { tree with regions = final_regions }
+;;
+
+(* Distance between two points *)
+let[@inline] distance (p1 : Physics.vec) (p2 : Physics.vec) =
+  let open Physics in
+  p1 --> p2 |> mag
+;;
+
+(* Barnes-Hut force calculation *)
+let calculate_force_on_body (target_body : Body.t) tree =
+  let total_force = ref (Physics.vec 0. 0. 0.) in
+  let rec traverse_tree morton level =
+    (* Try to find aggregate data at this level *)
+    match Map.find tree.regions morton with
+    | Some region_data ->
+      let dist = distance target_body.pos region_data.centroid.p in
+      let ratio = region_data.size /. dist in
+      (* Barnes-Hut criterion: if s/d < θ, use approximation *)
+      if Float.(ratio < tree.theta)
+      then (
+        (* Use aggregate mass - treat whole region as single body *)
+        let force_vec =
+          Physics.acc_on target_body.pos region_data.centroid.p region_data.centroid.m
+        in
+        total_force := Owl.Mat.(!total_force + force_vec))
+      else if level = 0 (* Region too close - need to go deeper *)
+      then (
+        (* At leaf level - calculate individual body forces *)
+        match Map.find tree.bodies morton with
+        | Some bodies ->
+          List.iter bodies ~f:(fun body ->
+            if not (Physics.close_enough target_body.pos body.p)
+            then (
+              let force_vec = Physics.acc_on target_body.pos body.p body.m in
+              total_force := Owl.Mat.(!total_force + force_vec)))
+        | None -> ())
+      else
+        for
+          (* Go to child level - examine 8 children *)
+          child_idx = 0 to 7
+        do
+          let child_morton =
+            { Int126.high = (morton.high lsl 3) lor (morton.low lsr 60)
+            ; low = (morton.low lsl 3) lor child_idx land Int126.mask_63
+            }
           in
-          List.rev_append filtered acc)
-        else acc)
-      ~init:[]
-      octree.data
-  ;;
+          traverse_tree child_morton (level - 1)
+        done
+    | None ->
+      (* No data at this level, try going to leaf level *)
+      if level > 0
+      then
+        for child_idx = 0 to 7 do
+          let child_morton =
+            { Int126.high = (morton.high lsl 3) lor (morton.low lsr 60)
+            ; low = (morton.low lsl 3) lor child_idx land Int126.mask_63
+            }
+          in
+          traverse_tree child_morton (level - 1)
+        done
+  in
+  (* Start traversal from root level *)
+  traverse_tree Int126.zero Morton126.bits_per_dimension;
+  !total_force
+;;
 
-  let nearest_neighbor query_point k octree =
-    let distance_squared p1 p2 =
-      let open Physics in
-      let dx = p1.%{`x} -. p2.%{`x} in
-      let dy = p1.%{`y} -. p2.%{`y} in
-      let dz = p1.%{`z} -. p2.%{`z} in
-      (dx *. dx) +. (dy *. dy) +. (dz *. dz)
-    in
-    let all_entries =
-      Map.fold octree.data ~init:[] ~f:(fun ~key:_ ~data:entries acc ->
-        List.rev_append entries acc)
-    in
-    let sorted =
-      List.sort
-        ~compare:(fun a b ->
-          let dist_a = distance_squared query_point a.point in
-          let dist_b = distance_squared query_point b.point in
-          Float.compare dist_a dist_b)
-        all_entries
-    in
-    let rec take n lst acc =
-      match lst, n with
-      | _, 0 -> List.rev acc
-      | [], _ -> List.rev acc
-      | h :: t, n -> take (n - 1) t (h :: acc)
-    in
-    take k sorted []
-  ;;
+(* Calculate forces on all bodies *)
+let calculate_all_forces tree bodies =
+  List.map bodies ~f:(fun body ->
+    let force = calculate_force_on_body body tree in
+    body, force)
+;;
 
-  let bulk_insert points_values octree =
-    List.fold_left
-      ~f:(fun acc (point, value) -> insert point value acc)
-      ~init:octree
-      points_values
-  ;;
+(* Update particle positions based on forces (simple Euler integration) *)
+let update_simulation bodies_forces dt =
+  List.iter bodies_forces ~f:(fun ((body : Body.t), (force : Physics.vec)) ->
+    let acceleration = Owl.Mat.(force /$ body.mass) in
+    body.vel <- Owl.Mat.(body.vel + (acceleration *$ dt));
+    body.pos <- Owl.Mat.(body.pos + (body.vel *$ dt)))
+;;
 
-  let to_list octree =
-    Map.fold octree.data ~init:[] ~f:(fun ~key:_ ~data:entries acc ->
-      List.rev_append entries acc)
-  ;;
-
-  let size octree =
-    Map.fold octree.data ~init:0 ~f:(fun ~key:_ ~data:entries acc ->
-      acc + List.length entries)
-  ;;
-end
-
-let example_usage () =
-  (* Create 3D octree with bounds *)
+(* Usage example with efficient batch processing *)
+let gravity_simulation_example () =
   let bounds =
-    { Bb.x_min = 0.0
-    ; x_max = 1000.0
-    ; y_min = 0.0
-    ; y_max = 1000.0
-    ; z_min = 0.0
-    ; z_max = 1000.0
-    }
+    Bb.
+      { x_min = -1000.0
+      ; x_max = 1000.0
+      ; y_min = -1000.0
+      ; y_max = 1000.0
+      ; z_min = -1000.0
+      ; z_max = 1000.0
+      }
   in
-  let octree = LinearOctree.create bounds in
-  (* Insert some points *)
-  let points =
+  (* Create empty tree *)
+  let tree = create bounds 0.5 in
+  (* Add many bodies efficiently *)
+  let bodies =
     let open Physics in
-    [ point 100.5 200.3 300.7, "point1"
-    ; point 150.2 250.8 350.1, "point2"
-    ; point 500.0 500.0 500.0, "center"
-    ]
+    Body.
+      [ { pos = point 0. 0. 0.; mass = 1000.0; vel = vec 0. 0. 0. }
+      ; { pos = point 100. 0. 0.; mass = 1000.0; vel = vec 0. 10. 0. }
+      ; { pos = point (-100.) 0. 0.; mass = 1000.0; vel = vec 0. (-10.) 0. }
+      ]
   in
-  let octree_with_data = LinearOctree.bulk_insert points octree in
-  (* Range query *)
-  let query_bounds =
-    { Bb.x_min = 90.0
-    ; x_max = 200.0
-    ; y_min = 190.0
-    ; y_max = 300.0
-    ; z_min = 290.0
-    ; z_max = 400.0
-    }
+  let centroids =
+    List.map bodies ~f:(fun (body : Body.t) -> C.{ m = body.mass; p = body.pos })
   in
-  let results = LinearOctree.range_query query_bounds octree_with_data in
-  let query_point = Physics.point 100.0 200.0 300.0 in
-  let nearest = LinearOctree.nearest_neighbor query_point 2 octree_with_data in
-  octree_with_data, results, nearest
+  (* EFFICIENT: Batch insert all bodies first (fast) *)
+  let tree_with_bodies = insert_bodies centroids tree in
+  (* THEN: Build all aggregates once (single pass) *)
+  let tree_with_aggregates = build_aggregates tree_with_bodies in
+  (* Now ready for force calculations *)
+  let forces = calculate_all_forces tree_with_aggregates bodies in
+  update_simulation forces 0.01;
+  Printf.printf "Efficient gravity simulation:\n";
+  Printf.printf "1. Batch inserted %d bodies (O(N))\n" (List.length bodies);
+  Printf.printf "2. Built aggregates once (O(N))\n";
+  Printf.printf "3. Calculated forces using Barnes-Hut (O(N log N))\n";
+  tree_with_aggregates
+;;
+
+(* For dynamic simulations where bodies move each timestep *)
+let simulation_timestep bodies bounds ~theta ~dt =
+  (* Rebuild tree from scratch each timestep - this is standard practice *)
+  let empty_tree = create bounds theta in
+  let centroids =
+    List.map bodies ~f:(fun (body : Body.t) -> C.{ m = body.mass; p = body.pos })
+  in
+  let tree_with_bodies = insert_bodies centroids empty_tree in
+  let tree_with_aggregates = build_aggregates tree_with_bodies in
+  let forces = calculate_all_forces tree_with_aggregates bodies in
+  update_simulation forces dt
 ;;

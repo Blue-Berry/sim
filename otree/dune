@@ -1,9 +1,25 @@
+
 (library
- (name otree)
- (modules otree bb morton126 lmotree centroid)
+ (name utils)
+ (modules bb morton126 centroid)
  (libraries owl body core)
  (preprocess
   (pps ppx_jane)))
+
+(library
+ (name otree)
+ (modules otree)
+ (libraries owl body core utils)
+ (preprocess
+  (pps ppx_jane)))
+
+(library
+ (name lmotree)
+ (modules lmotree)
+ (libraries owl body core utils)
+ (preprocess
+  (pps ppx_jane)))
+
 
 (library
  (name otree_test)

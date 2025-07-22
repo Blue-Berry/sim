@@ -1,5 +1,6 @@
 open! Core
 module Physics = Body.Physics
+open Utils
 module C = Centroid
 module Bb = Bb
 

@@ -9,6 +9,7 @@ module Int128 : sig
   val zero : t
   val one : t
   val of_int : int -> t
+  val add : t -> t -> t
   val shift_left : t -> int -> t
   val shift_right_logical : t -> int -> t
   val logand : t -> t -> t
@@ -18,9 +19,9 @@ module Int128 : sig
   val equal : t -> t -> bool
   val test_bit : t -> int -> bool
   val to_hex : t -> string
-  val of_hex : 'a -> 'b
+  val of_hex : string -> t
   val sexp_of_t : t -> Sexplib0.Sexp.t
-  val t_of_sexp : Sexplib0.Sexp.t -> 'a
+  val t_of_sexp : Sexplib0.Sexp.t -> t
   val popcount : t -> int
 end
 

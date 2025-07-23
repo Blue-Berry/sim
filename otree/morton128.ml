@@ -14,6 +14,17 @@ module Int128 = struct
   let one = UInt64.{ high = zero; low = one }
   let of_int i = UInt64.{ high = zero; low = UInt64.of_int i }
 
+  let add t1 t2 =
+    let open UInt64.Infix in
+    let low_result = t1.low + t2.low in
+    (* Detect carry: if result < either operand, we had overflow *)
+    let carry =
+      if UInt64.compare low_result t1.low < 0 then UInt64.one else UInt64.zero
+    in
+    let high_result = t1.high + t2.high + carry in
+    { high = high_result; low = low_result }
+  ;;
+
   let shift_left t bits =
     match bits with
     | 0 -> t
@@ -68,7 +79,23 @@ module Int128 = struct
         to_hexstring t.high ^ (to_hexstring t.low |> String.pad_left ~char:'0' ~len:16))
   ;;
 
-  let of_hex _s = failwith "TODO"
+  let of_hex s =
+    (* read from the x add convert each char and then << 4 before next *)
+    let value = ref zero in
+    let s = String.split ~on:'x' s in
+    let s = List.last_exn s in
+    let rec loop = function
+      | [] -> ()
+      | c :: cs ->
+        value := shift_left !value 4;
+        let hex = String.of_char_list [ '0'; 'x'; c ] |> Int.Hex.of_string in
+        value := add !value (of_int hex);
+        loop cs
+    in
+    loop (String.to_list s);
+    !value
+  ;;
+
   let sexp_of_t t = Sexp.of_string (to_hex t)
   let t_of_sexp s = of_hex (Sexp.to_string s)
 
@@ -76,9 +103,9 @@ module Int128 = struct
     let int64_popcount (i : uint64) =
       let open UInt64.Infix in
       let count = ref 0 in
-      for k = 0 to 64 do
+      for k = 0 to 63 do
         (* add: ((1 << k) & i) >> k  *)
-        count := (i land (UInt64.one lsl k)) lsr k |> UInt64.to_int
+        count := (i land (UInt64.one lsl k)) lsr k |> UInt64.to_int |> Stdlib.( + ) !count
       done;
       !count
     in

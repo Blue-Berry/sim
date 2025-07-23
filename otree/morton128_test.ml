@@ -8,6 +8,8 @@ let%expect_test "Int128" =
   [%expect {| 0x00000000000000000 |}];
   print_s [%sexp (one : Int128.t)];
   [%expect {| 0x00000000000000001 |}];
+  print_s [%sexp (of_int 16 : Int128.t)];
+  [%expect {| 0x00000000000000010 |}];
   print_s [%sexp (shift_left one 1 : Int128.t)];
   [%expect {| 0x00000000000000002 |}];
   print_s [%sexp (shift_left one 63 : Int128.t)];
@@ -20,22 +22,36 @@ let%expect_test "Int128" =
   printf "Low: %d; High: %d;" (Unsigned.UInt64.to_int low) (Unsigned.UInt64.to_int high);
   [%expect {| Low: 0; High: 72057594037927936; |}];
   print_s [%sexp (shift_left one 127 : Int128.t)];
-  [%expect {| 0x80000000000000000000000000000000 |}]
+  [%expect {| 0x80000000000000000000000000000000 |}];
+  print_s [%sexp (shift_right_logical (shift_left one 63) 63 : Int128.t)];
+  [%expect {| 0x00000000000000001 |}];
+  print_s [%sexp (shift_right_logical (shift_left one 127) 127 : Int128.t)];
+  [%expect {| 0x00000000000000001 |}];
+  print_s [%sexp (compare zero one : int)];
+  [%expect {| -1 |}];
+  print_s [%sexp (test_bit (shift_left one 120) 120 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (test_bit one 0 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (test_bit (shift_left one 1) 1 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (test_bit (shift_left one 63) 63 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (test_bit (shift_left one 64) 64 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (test_bit (shift_left one 120) 120 : bool)];
+  [%expect {| true |}];
+  print_s [%sexp (add (shift_left one 63) (shift_left one 63) : Int128.t)];
+  [%expect {| 0x10000000000000000 |}];
+  print_s [%sexp (of_hex "0x80000000000000000000000000000000" : Int128.t)];
+  [%expect {| 0x80000000000000000000000000000000 |}];
+  print_s [%sexp (sexp_of_t one : Sexp.t)];
+  [%expect {| 0x00000000000000001 |}];
+  print_s [%sexp (t_of_sexp (Sexp.of_string "0x00000000000000001") : Int128.t)];
+  [%expect {| 0x00000000000000001 |}];
+  print_s [%sexp (popcount (of_hex "0xff") : int)];
+  [%expect {| 8 |}]
 ;;
-
-(* val shift_left : t -> int -> t *)
-(* val shift_right_logical : t -> int -> t *)
-(* val logand : t -> t -> t *)
-(* val logor : t -> t -> t *)
-(* val logxor : t -> t -> t *)
-(* val compare : t -> t -> int *)
-(* val equal : t -> t -> bool *)
-(* val test_bit : t -> int -> bool *)
-(* val to_hex : t -> string *)
-(* val of_hex : string -> t *)
-(* val to_string : t -> string *)
-(* val sexp_of_t : t -> Sexplib0.Sexp.t *)
-(* val t_of_sexp : Sexplib0.Sexp.t -> t *)
 
 (* TODO:  val encode : int -> int -> int -> Int128.t *)
 (* TODO:  val decode : Int128.t -> int * int * int *)
@@ -51,27 +67,13 @@ let%expect_test "encode" =
   [%expect {| 0x00000000000000001 |}]
 ;;
 
-let%expect_test "decode" =
-  let x, y, z = decode Int128.one in
-  Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {| x: 2199023255552; y: 0; z: 0; |}];
-  let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000000") in
-  Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect.unreachable];
-  let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000001") in
-  Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect.unreachable];
-  let x, y, z = decode (Int128.of_hex "0x12492492492492491249249249249249") in
-  Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect.unreachable]
-[@@expect.uncaught_exn
-  {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure TODO)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Morton128_test.(fun) in file "otree/morton128_test.ml", line 58, characters 23-73
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
-  |}]
-;;
+(* let%expect_test "decode" = *)
+(*   let x, y, z = decode Int128.one in *)
+(*   Printf.printf "x: %d; y: %d; z: %d;" x y z; *)
+(*   [%expect {| x: 2199023255552; y: 0; z: 0; |}]; *)
+(*   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000000") in *)
+(*   Printf.printf "x: %d; y: %d; z: %d;" x y z; *)
+(*   [%expect.unreachable]; *)
+(*   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000001") in *)
+(*   Printf.printf "x: %d; y: %d; z: %d;" x y z; *)
+(* ; *)

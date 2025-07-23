@@ -189,15 +189,6 @@ let%expect_test "example" =
        (0x00076dfedfedfedfe
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.06103515625)))
-       (0x0007ff6ff6ff6ff6f
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.06103515625)))
-       (0x0007fffffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x000edbfdbfdbfdbff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.06103515625)))
        (0x001ffdbfdbfdbfdbf
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.030517578125)))
@@ -207,186 +198,195 @@ let%expect_test "example" =
        (0x003b6ff6ff6ff6ff6
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.06103515625)))
-       (0x003ffb7fb7fb7fb7f
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x003ffffffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.003814697265625)))
-       (0x0076dfedfedfedfed
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x3000ffedfedfedfff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x3000fffffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x7001db7fb7fb7fb7f
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.06103515625)))
-       (0x1f0001ffdbfdbfdbff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x1f0001ffffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x3b0003b6ff6ff6ffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0xff00003ffb7fb7ffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0xff00003fffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x1db000076dfedfedfff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.06103515625)))
-       (0x7ff000007ff6ff6ffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x7ff000007ffffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0xedb00000edbfdbfffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x3ffb000000ffedffffff
+       (0x00ffedfedfedfedfe
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0152587890625)))
-       (0x3fff000000ffffffffff
+       (0x00fffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x76df000001db7fb7ffff
+         (size 0.0019073486328125)))
+       (0x01db7fb7fb7fb7fb7
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.030517578125)))
-       (0x1ffdb0000001ffdbfffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x1ffff0000001fffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x3b6ff0000003b6fffffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0xffedf00000003ffffffff
+       (0x07ff6ff6ff6ff6ff6
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0152587890625)))
-       (0xfffff00000003ffffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0x1db7fb000000076dffffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x7ff6ff000000007fffffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.0152587890625)))
-       (0x7fffff000000007fffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.00762939453125)))
-       (0xedbfdb00000000efffffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.030517578125)))
-       (0x3ffb7fb000000003fffffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.0152587890625)))
-       (0x3ffffff000000007fffffff
-        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.003814697265625)))
-       (0x76dfedf000000007fffffff
-        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.0152587890625)))
-       (0x1ffdbfdb00000001bfffffff
-        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.003814697265625)))
-       (0x1fffffff00000003ffffffff
+       (0x07fffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.00095367431640625)))
-       (0x3b6ff6ff00000003f7ffffff
+       (0x0edbfdbfdbfdbfdbf
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.0152587890625)))
+       (0x3ffb7fb7fb7fb7fb7
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.00762939453125)))
+       (0x3ffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.000476837158203125)))
+       (0x76dfedfedfedfedfe
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.00762939453125)))
+       (0x1ffdbfdbfdbfdbfdbf
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.003814697265625)))
+       (0x1fffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.0002384185791015625)))
+       (0x3b6ff6ff6ff6ff6ff6
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.003814697265625)))
-       (0xffedfedf0000000dfeffffff
+       (0xffedfedfedfedfedfe
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0019073486328125)))
-       (0xffffffff0000001fffffffff
+       (0xffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.0002384185791015625)))
-       (0x1db7fb7fb0000001fb7ffffff
+         (size 0.00011920928955078125)))
+       (0x1db7fb7fb7fb7fb7fb7
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0019073486328125)))
-       (0x7ff6ff6ff0000006ff6ffffff
+       (0x7ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 0.000476837158203125)))
-       (0x7ffffffff000000ffffffffff
+         (size 0.00095367431640625)))
+       (0x7ffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 5.9604644775390625E-05)))
-       (0xedbfdbfdb000000fdbfdfffff
+       (0xedbfdbfdbfdbfdbfdbf
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.00095367431640625)))
+       (0x3ffb7fb7fb7fb7fb7fb7
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.000476837158203125)))
-       (0x3ffb7fb7fb0000037fb7fbffff
+       (0x3fffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 2.9802322387695312E-05)))
+       (0x76dfedfedfedfedfedfe
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.00095367431640625)))
+       (0x1ffdbfdbfdbfdbfdbfdbf
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0002384185791015625)))
-       (0x3fffffffff000007ffffffffff
+       (0x1ffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 1.4901161193847656E-05)))
-       (0x76dfedfedf000007edfedfffff
+       (0x3b6ff6ff6ff6ff6ff6ff6
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.000476837158203125)))
+       (0xffedfedfedfedfedfedfe
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.0002384185791015625)))
+       (0xfffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 7.4505805969238281E-06)))
+       (0x1db7fb7fb7fb7fb7fb7fb7
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 0.0002384185791015625)))
-       (0x1ffdbfdbfdb00001bfdbfdbffff
+       (0x7ff6ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 5.9604644775390625E-05)))
-       (0x1ffffffffff00003fffffffffff
+         (size 0.00011920928955078125)))
+       (0x7fffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 3.7252902984619141E-06)))
-       (0x3b6ff6ff6ff00003f6ff6ff7fff
+       (0xedbfdbfdbfdbfdbfdbfdbf
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 0.00011920928955078125)))
+       (0x3ffb7fb7fb7fb7fb7fb7fb7
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 5.9604644775390625E-05)))
+       (0x3ffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.862645149230957E-06)))
+       (0x76dfedfedfedfedfedfedfe
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 5.9604644775390625E-05)))
-       (0xffedfedfedf0000dfedfedfefff
+       (0x1ffdbfdbfdbfdbfdbfdbfdbf
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 2.9802322387695312E-05)))
-       (0xfffffffffff0001ffffffffffff
+       (0x1fffffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 9.3132257461547852E-07)))
-       (0x1db7fb7fb7fb0001fb7fb7fb7fff
+       (0x3b6ff6ff6ff6ff6ff6ff6ff6
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 5.9604644775390625E-05)))
+       (0xffedfedfedfedfedfedfedfe
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.4901161193847656E-05)))
+       (0xffffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 4.6566128730773926E-07)))
+       (0x1db7fb7fb7fb7fb7fb7fb7fb7
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 2.9802322387695312E-05)))
-       (0x7ff6ff6ff6ff0006ff6ff6ff6fff
+       (0x7ff6ff6ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 7.4505805969238281E-06)))
-       (0x7fffffffffff000fffffffffffff
+         (size 1.4901161193847656E-05)))
+       (0x7ffffffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 2.3283064365386963E-07)))
-       (0xedbfdbfdbfdb000fdbfdbfdbfdff
+       (0xedbfdbfdbfdbfdbfdbfdbfdbf
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.4901161193847656E-05)))
+       (0x3ffb7fb7fb7fb7fb7fb7fb7fb7
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 7.4505805969238281E-06)))
+       (0x3fffffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.1641532182693481E-07)))
+       (0x76dfedfedfedfedfedfedfedfe
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 7.4505805969238281E-06)))
-       (0x3ffb7fb7fb7fb0037fb7fb7fb7fbf
+       (0x1ffdbfdbfdbfdbfdbfdbfdbfdbf
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 3.7252902984619141E-06)))
-       (0x3ffffffffffff007fffffffffffff
+       (0x1ffffffffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 5.8207660913467407E-08)))
-       (0x76dfedfedfedf007edfedfedfedff
+       (0x3b6ff6ff6ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 3.7252902984619141E-06)))
-       (0x1ffdbfdbfdbfdb01bfdbfdbfdbfdbf
+       (0xffedfedfedfedfedfedfedfedfe
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.862645149230957E-06)))
+       (0xfffffffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 2.9103830456733704E-08)))
+       (0x1db7fb7fb7fb7fb7fb7fb7fb7fb7
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.862645149230957E-06)))
+       (0x7ff6ff6ff6ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 9.3132257461547852E-07)))
-       (0x1fffffffffffff03ffffffffffffff
+       (0x7fffffffffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 1.4551915228366852E-08)))
-       (0x3b6ff6ff6ff6ff03f6ff6ff6ff6ff7
+       (0xedbfdbfdbfdbfdbfdbfdbfdbfdbf
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 9.3132257461547852E-07)))
-       (0xffedfedfedfedf0dfedfedfedfedfe
+       (0x3ffb7fb7fb7fb7fb7fb7fb7fb7fb7
         ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 4.6566128730773926E-07)))
-       (0xffffffffffffff1fffffffffffffff
+       (0x3ffffffffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 7.2759576141834259E-09)))
+       (0x76dfedfedfedfedfedfedfedfedfe
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 9.3132257461547852E-07)))
+       (0x1ffdbfdbfdbfdbfdbfdbfdbfdbfdbf
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 2.3283064365386963E-07)))
+       (0x1fffffffffffffffffffffffffffff
         ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
          (size 3.637978807091713E-09)))
-       (0x1db7fb7fb7fb7fb1fb7fb7fb7fb7fb7
+       (0x3b6ff6ff6ff6ff6ff6ff6ff6ff6ff6
         ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
-         (size 4.6566128730773926E-07)))))
+         (size 4.6566128730773926E-07)))
+       (0xffedfedfedfedfedfedfedfedfedfe
+        ((centroid ((p ((x -100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 2.3283064365386963E-07)))
+       (0xffffffffffffffffffffffffffffff
+        ((centroid ((p ((x 0) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 1.8189894035458565E-09)))
+       (0x1db7fb7fb7fb7fb7fb7fb7fb7fb7fb7
+        ((centroid ((p ((x 100) (y 0) (z 0))) (m 1000))) (bodies 1)
+         (size 2.3283064365386963E-07)))))
      (bounds
       ((x_min -1000) (x_max 1000) (y_min -1000) (y_max 1000) (z_min -1000)
        (z_max 1000)))

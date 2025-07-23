@@ -13,6 +13,7 @@ module Int128 = struct
   let zero = UInt64.{ high = zero; low = zero }
   let one = UInt64.{ high = zero; low = one }
   let of_int i = UInt64.{ high = zero; low = UInt64.of_int i }
+  let of_uint64 i = UInt64.{ high = zero; low = i }
 
   let add t1 t2 =
     let open UInt64.Infix in
@@ -44,7 +45,7 @@ module Int128 = struct
     | bits when bits >= 64 -> UInt64.{ high = zero; low = shift_right t.high (bits - 64) }
     | bits ->
       let open UInt64.Infix in
-      let low = (t.low lsr bits) lor (t.high lsr Stdlib.(64 - bits)) in
+      let low = (t.low lsr bits) lor (t.high lsl Stdlib.(64 - bits)) in
       let high = t.high lsr bits in
       { high; low }
   ;;
@@ -118,27 +119,29 @@ end
 
 type t = Int128.t
 
+open Unsigned
+
 let bits_per_dimension = 42 (* 128 / 3 *)
 
-let encode x y z =
-  let rec interleave acc x y z depth =
+let encode (x : uint64) (y : uint64) (z : uint64) =
+  let rec interleave acc (x : uint64) (y : uint64) (z : uint64) depth =
     match depth with
     | 0 -> acc
     | _ ->
-      (* Extract bits using fast native operations *)
-      let mask = 1 lsl (depth - 1) in
+      let open UInt64.Infix in
+      let mask = UInt64.one lsl Int.(depth - 1) in
       let bit_x = x land mask in
       let bit_y = y land mask in
       let bit_z = z land mask in
-      (* Pack bits efficiently *)
       let acc_shifted = Int128.shift_left acc 3 in
       let bits_packed =
-        (if bit_z <> 0 then 4 else 0)
-        lor (if bit_y <> 0 then 2 else 0)
-        lor if bit_x <> 0 then 1 else 0
+        UInt64.(
+          (if not (equal bit_z zero) then one lsl 2 else zero)
+          lor (if not (equal bit_y zero) then one lsl 1 else zero)
+          lor if not (equal bit_x zero) then one else zero)
       in
-      let combined = Int128.logor acc_shifted (Int128.of_int bits_packed) in
-      interleave combined x y z (depth - 1)
+      let combined = Int128.logor acc_shifted (Int128.of_uint64 bits_packed) in
+      interleave combined x y z Int.(depth - 1)
   in
   interleave Int128.zero x y z bits_per_dimension
 ;;
@@ -147,27 +150,35 @@ let decode morton =
   let rec extract_bits morton depth x_acc y_acc z_acc =
     if depth = 0
     then x_acc, y_acc, z_acc
-    else (
+    else
+      let open UInt64.Infix in
+      let open UInt64 in
       let bit_x =
-        if Int128.test_bit morton 0 then 1 lsl (bits_per_dimension - depth) else 0
+        if Int128.test_bit morton 0
+        then one lsl Int.(bits_per_dimension - depth)
+        else zero
       in
       let bit_y =
-        if Int128.test_bit morton 1 then 1 lsl (bits_per_dimension - depth) else 0
+        if Int128.test_bit morton 1
+        then one lsl Int.(bits_per_dimension - depth)
+        else zero
       in
       let bit_z =
-        if Int128.test_bit morton 2 then 1 lsl (bits_per_dimension - depth) else 0
+        if Int128.test_bit morton 2
+        then one lsl Int.(bits_per_dimension - depth)
+        else zero
       in
-      print_endline (Int128.to_hex morton);
-      printf "x: %d; y: %d; z: %d;\n" bit_x bit_y bit_z;
-      printf "ACC: x: %d; y: %d; z: %d;\n" x_acc y_acc z_acc;
+      (* print_endline (Int128.to_hex morton); *)
+      (* printf "x: %d; y: %d; z: %d;\n" bit_x bit_y bit_z; *)
+      (* printf "ACC: x: %d; y: %d; z: %d;\n" x_acc y_acc z_acc; *)
       extract_bits
         (Int128.shift_right_logical morton 3)
-        (depth - 1)
+        Int.(depth - 1)
         (x_acc lor bit_x)
         (y_acc lor bit_y)
-        (z_acc lor bit_z))
+        (z_acc lor bit_z)
   in
-  extract_bits morton bits_per_dimension 0 0 0
+  UInt64.(extract_bits morton bits_per_dimension zero zero zero)
 ;;
 
 let point_to_grid (p : Physics.point) (bounds : Bb.t) =

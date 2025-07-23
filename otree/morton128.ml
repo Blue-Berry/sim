@@ -37,6 +37,7 @@ module Int128 = struct
       { high; low }
   ;;
 
+  (* TODO: Fix *)
   let shift_right_logical t bits =
     match bits with
     | 0 -> t
@@ -117,7 +118,7 @@ end
 
 type t = Int128.t
 
-let bits_per_dimension = 126 / 3
+let bits_per_dimension = 42 (* 128 / 3 *)
 
 let encode x y z =
   let rec interleave acc x y z depth =
@@ -147,9 +148,18 @@ let decode morton =
     if depth = 0
     then x_acc, y_acc, z_acc
     else (
-      let bit_x = if Int128.test_bit morton 0 then 1 lsl (depth - 1) else 0 in
-      let bit_y = if Int128.test_bit morton 1 then 1 lsl (depth - 1) else 0 in
-      let bit_z = if Int128.test_bit morton 2 then 1 lsl (depth - 1) else 0 in
+      let bit_x =
+        if Int128.test_bit morton 0 then 1 lsl (bits_per_dimension - depth) else 0
+      in
+      let bit_y =
+        if Int128.test_bit morton 1 then 1 lsl (bits_per_dimension - depth) else 0
+      in
+      let bit_z =
+        if Int128.test_bit morton 2 then 1 lsl (bits_per_dimension - depth) else 0
+      in
+      print_endline (Int128.to_hex morton);
+      printf "x: %d; y: %d; z: %d;\n" bit_x bit_y bit_z;
+      printf "ACC: x: %d; y: %d; z: %d;\n" x_acc y_acc z_acc;
       extract_bits
         (Int128.shift_right_logical morton 3)
         (depth - 1)

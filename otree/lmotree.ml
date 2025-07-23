@@ -2,14 +2,14 @@ open! Core
 open Utils
 module Physics = Body.Physics
 module C = Centroid
-module Int126 = Morton126.Int126
+module Int128 = Morton126.Int128
 
 module MortonMap = Map.Make (struct
-    type t = Int126.t
+    type t = Int128.t
 
-    let compare = Int126.compare
-    let t_of_sexp = Int126.t_of_sexp
-    let sexp_of_t = Int126.sexp_of_t
+    let compare = Int128.compare
+    let t_of_sexp = Int128.t_of_sexp
+    let sexp_of_t = Int128.sexp_of_t
   end)
 
 type region =
@@ -123,8 +123,8 @@ let calculate_force_on_body (target_body : Body.t) tree =
           child_idx = 0 to 7
         do
           let child_morton =
-            { Int126.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor child_idx land Int126.mask_63
+            { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
+            ; low = (morton.low lsl 3) lor child_idx land Int128.mask_63
             }
           in
           traverse_tree child_morton (level - 1)
@@ -135,15 +135,15 @@ let calculate_force_on_body (target_body : Body.t) tree =
       then
         for child_idx = 0 to 7 do
           let child_morton =
-            { Int126.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor child_idx land Int126.mask_63
+            { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
+            ; low = (morton.low lsl 3) lor child_idx land Int128.mask_63
             }
           in
           traverse_tree child_morton (level - 1)
         done
   in
   (* Start traversal from root level *)
-  traverse_tree Int126.zero Morton126.bits_per_dimension;
+  traverse_tree Int128.zero Morton126.bits_per_dimension;
   !total_force
 ;;
 

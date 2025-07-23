@@ -1,7 +1,7 @@
 module Physics = Body.Physics
 open Utils
 module C = Centroid
-module Int126 = Morton126.Int126
+module Int128 = Morton126.Int128
 
 module MortonMap : sig
   type 'a t

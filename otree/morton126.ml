@@ -1,81 +1,75 @@
 open! Core
 module Physics = Body.Physics
 
-module Int126 = struct
+module Int128 = struct
+  open Unsigned
+
   (* Use two native OCaml ints (63 bits each) for better performance *)
   type t =
-    { high : int (* Most significant 63 bits *)
-    ; low : int (* Least significant 63 bits *)
+    { high : UInt64.t
+    ; low : UInt64.t
     }
 
-  let zero = { high = 0; low = 0 }
-  let one = { high = 0; low = 1 }
-  let max_63_bit = (1 lsl 62) - 1 (* 2^62 - 1, avoiding sign bit *)
-  let mask_63 = max_63_bit
-  let of_int i = { high = 0; low = i land mask_63 }
+  let zero = UInt64.{ high = zero; low = zero }
+  let one = UInt64.{ high = zero; low = one }
+  let of_int i = UInt64.{ high = zero; low = UInt64.of_int i }
 
   let shift_left t bits =
-    if bits >= 63
-    then { high = (t.low lsl (bits - 63)) land mask_63; low = 0 }
-    else if bits = 0
-    then t
-    else (
-      let high' = (t.high lsl bits) lor (t.low lsr (63 - bits)) land mask_63 in
-      let low' = (t.low lsl bits) land mask_63 in
-      { high = high'; low = low' })
+    match bits with
+    | 0 -> t
+    | bits when bits >= 64 ->
+      UInt64.{ high = UInt64.shift_left t.low (bits - 64); low = zero }
+    | bits ->
+      let open UInt64.Infix in
+      let high = (t.high lsl bits) lor (t.low lsr Stdlib.(64 - bits)) in
+      let low = t.low lsl bits in
+      { high; low }
   ;;
 
   let shift_right_logical t bits =
-    if bits >= 63
-    then { high = 0; low = t.high lsr (bits - 63) }
-    else if bits = 0
-    then t
-    else (
-      let low' =
-        (t.low lsr bits) lor ((t.high land ((1 lsl bits) - 1)) lsl (63 - bits))
-      in
-      let high' = t.high lsr bits in
-      { high = high'; low = low' })
+    match bits with
+    | 0 -> t
+    | bits when bits >= 64 -> UInt64.{ high = zero; low = shift_right t.high (bits - 64) }
+    | bits ->
+      let open UInt64.Infix in
+      let low = (t.low lsr bits) lor (t.high lsr Stdlib.(64 - bits)) in
+      let high = t.high lsr bits in
+      { high; low }
   ;;
 
-  let logand t1 t2 = { high = t1.high land t2.high; low = t1.low land t2.low }
-  let logor t1 t2 = { high = t1.high lor t2.high; low = t1.low lor t2.low }
-  let logxor t1 t2 = { high = t1.high lxor t2.high; low = t1.low lxor t2.low }
+  let logand t1 t2 =
+    UInt64.Infix.{ high = t1.high land t2.high; low = t1.low land t2.low }
+  ;;
+
+  let logor t1 t2 = UInt64.Infix.{ high = t1.high lor t2.high; low = t1.low lor t2.low }
+
+  let logxor t1 t2 =
+    UInt64.Infix.{ high = t1.high lxor t2.high; low = t1.low lxor t2.low }
+  ;;
 
   let compare t1 t2 =
-    let high_cmp = Int.compare t1.high t2.high in
-    if high_cmp = 0 then Int.compare t1.low t2.low else high_cmp
+    let high_cmp = UInt64.compare t1.high t2.high in
+    if high_cmp = 0 then UInt64.compare t1.low t2.low else high_cmp
   ;;
 
-  let equal t1 t2 = t1.high = t2.high && t1.low = t2.low
+  let equal t1 t2 = UInt64.(equal t1.high t2.high && equal t1.low t2.low)
 
   let test_bit t bit_pos =
-    if bit_pos >= 63
-    then (t.high lsr (bit_pos - 63)) land 1 = 1
-    else (t.low lsr bit_pos) land 1 = 1
+    let open UInt64.Infix in
+    if bit_pos >= 64
+    then (t.high lsr Stdlib.(bit_pos - 64)) land UInt64.one |> UInt64.equal UInt64.one
+    else (t.low lsr bit_pos) land UInt64.one |> UInt64.equal UInt64.one
   ;;
 
-  let to_hex t = Printf.sprintf "0x%015x%015x" t.high t.low
-
-  let of_hex s =
-    let high_hex = "0x" ^ String.sub s ~pos:2 ~len:15 in
-    let high = Int.Hex.of_string high_hex in
-    let low_hex = "0x" ^ String.sub s ~pos:17 ~len:15 in
-    let low = Int.Hex.of_string low_hex in
-    { low; high }
-  ;;
-
-  let to_string t =
-    if t.high = 0 then string_of_int t.low else Printf.sprintf "%d%015d" t.high t.low
-  ;;
-
+  let to_hex t = Printf.sprintf "0x%s" UInt64.(to_hexstring t.high ^ to_hexstring t.low)
+  let of_hex _s = failwith "TODO"
   let sexp_of_t t = Sexp.of_string (to_hex t)
   let t_of_sexp s = of_hex (Sexp.to_string s)
 
   (* let t_of_sexp s = *)
 end
 
-type t = Int126.t
+type t = Int128.t
 
 let bits_per_dimension = 126 / 3
 
@@ -90,16 +84,16 @@ let encode x y z =
       let bit_y = y land mask in
       let bit_z = z land mask in
       (* Pack bits efficiently *)
-      let acc_shifted = Int126.shift_left acc 3 in
+      let acc_shifted = Int128.shift_left acc 3 in
       let bits_packed =
         (if bit_z <> 0 then 4 else 0)
         lor (if bit_y <> 0 then 2 else 0)
         lor if bit_x <> 0 then 1 else 0
       in
-      let combined = Int126.logor acc_shifted (Int126.of_int bits_packed) in
+      let combined = Int128.logor acc_shifted (Int128.of_int bits_packed) in
       interleave combined x y z (depth - 1)
   in
-  interleave Int126.zero x y z bits_per_dimension
+  interleave Int128.zero x y z bits_per_dimension
 ;;
 
 let decode morton =
@@ -107,11 +101,11 @@ let decode morton =
     if depth = 0
     then x_acc, y_acc, z_acc
     else (
-      let bit_x = if Int126.test_bit morton 0 then 1 lsl (depth - 1) else 0 in
-      let bit_y = if Int126.test_bit morton 1 then 1 lsl (depth - 1) else 0 in
-      let bit_z = if Int126.test_bit morton 2 then 1 lsl (depth - 1) else 0 in
+      let bit_x = if Int128.test_bit morton 0 then 1 lsl (depth - 1) else 0 in
+      let bit_y = if Int128.test_bit morton 1 then 1 lsl (depth - 1) else 0 in
+      let bit_z = if Int128.test_bit morton 2 then 1 lsl (depth - 1) else 0 in
       extract_bits
-        (Int126.shift_right_logical morton 3)
+        (Int128.shift_right_logical morton 3)
         (depth - 1)
         (x_acc lor bit_x)
         (y_acc lor bit_y)
@@ -137,5 +131,5 @@ let encode_point point bounds =
   encode x_grid y_grid z_grid
 ;;
 
-let parent_morton morton = Int126.shift_right_logical morton 3
-let morton_at_level morton level = Int126.shift_right_logical morton (level * 3)
+let parent_morton morton = Int128.shift_right_logical morton 3
+let morton_at_level morton level = Int128.shift_right_logical morton (level * 3)

@@ -1,7 +1,7 @@
 
 (library
  (name utils)
- (modules bb morton126 centroid)
+ (modules bb morton128 centroid)
  (libraries owl body core)
  (preprocess
   (pps ppx_jane)))
@@ -42,8 +42,8 @@
 
 
 (library
- (name morton126_test)
- (modules morton126_test)
+ (name morton128_test)
+ (modules morton128_test)
  (libraries core utils)
  (inline_tests)
  (preprocess

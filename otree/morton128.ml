@@ -61,10 +61,29 @@ module Int128 = struct
     else (t.low lsr bit_pos) land UInt64.one |> UInt64.equal UInt64.one
   ;;
 
-  let to_hex t = Printf.sprintf "0x%s" UInt64.(to_hexstring t.high ^ to_hexstring t.low)
+  let to_hex t =
+    Printf.sprintf
+      "0x%s"
+      UInt64.(
+        to_hexstring t.high ^ (to_hexstring t.low |> String.pad_left ~char:'0' ~len:16))
+  ;;
+
   let of_hex _s = failwith "TODO"
   let sexp_of_t t = Sexp.of_string (to_hex t)
   let t_of_sexp s = of_hex (Sexp.to_string s)
+
+  let popcount t =
+    let int64_popcount (i : uint64) =
+      let open UInt64.Infix in
+      let count = ref 0 in
+      for k = 0 to 64 do
+        (* add: ((1 << k) & i) >> k  *)
+        count := (i land (UInt64.one lsl k)) lsr k |> UInt64.to_int
+      done;
+      !count
+    in
+    int64_popcount t.low + int64_popcount t.high
+  ;;
 
   (* let t_of_sexp s = *)
 end

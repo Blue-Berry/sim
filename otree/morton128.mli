@@ -21,6 +21,7 @@ module Int128 : sig
   val of_hex : 'a -> 'b
   val sexp_of_t : t -> Sexplib0.Sexp.t
   val t_of_sexp : Sexplib0.Sexp.t -> 'a
+  val popcount : t -> int
 end
 
 type t = Int128.t

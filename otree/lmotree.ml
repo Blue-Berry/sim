@@ -2,7 +2,7 @@ open! Core
 open Utils
 module Physics = Body.Physics
 module C = Centroid
-module Int128 = Morton126.Int128
+module Int128 = Morton128.Int128
 
 module MortonMap = Map.Make (struct
     type t = Int128.t
@@ -44,7 +44,7 @@ let create bounds theta =
 
 (* Insert particle (just add to leaf - don't calculate aggregates yet) *)
 let insert_body (body : C.t) tree =
-  let morton = Morton126.encode_point body.p tree.bounds in
+  let morton = Morton128.encode_point body.p tree.bounds in
   let existing_bodies = Map.find tree.bodies morton |> Option.value ~default:[] in
   let updated_bodies = Map.set tree.bodies ~key:morton ~data:(body :: existing_bodies) in
   { tree with bodies = updated_bodies }
@@ -61,8 +61,8 @@ let build_aggregates tree =
   Map.iteri tree.bodies ~f:(fun ~key:morton ~data:bodies ->
     List.iter bodies ~f:(fun body ->
       (* Update all levels from leaf to root *)
-      for level = 1 to Morton126.bits_per_dimension do
-        let region_morton = Morton126.morton_at_level morton level in
+      for level = 1 to Morton128.bits_per_dimension do
+        let region_morton = Morton128.morton_at_level morton level in
         let existing = Map.find !regions region_morton |> Option.value ~default:[] in
         regions := Map.set !regions ~key:region_morton ~data:(body :: existing)
       done));
@@ -70,14 +70,11 @@ let build_aggregates tree =
   let final_regions =
     Map.mapi !regions ~f:(fun ~key:region_morton ~data:bodies ->
       let centroid = List.fold bodies ~init:C.empty ~f:(fun acc p -> C.add acc p) in
-      let level =
-        Morton126.bits_per_dimension
-        - ((Int.popcount region_morton.high + Int.popcount region_morton.low) / 3)
-      in
+      let level = Morton128.bits_per_dimension - (Int128.popcount region_morton / 3) in
       { centroid
       ; bodies = List.length bodies
       ; size =
-          region_size tree.bounds ~level ~bits_per_dimension:Morton126.bits_per_dimension
+          region_size tree.bounds ~level ~bits_per_dimension:Morton128.bits_per_dimension
       })
   in
   { tree with regions = final_regions }
@@ -123,8 +120,9 @@ let calculate_force_on_body (target_body : Body.t) tree =
           child_idx = 0 to 7
         do
           let child_morton =
+            let open Unsigned.UInt64.Infix in
             { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor child_idx land Int128.mask_63
+            ; low = (morton.low lsl 3) lor Unsigned.UInt64.of_int child_idx
             }
           in
           traverse_tree child_morton (level - 1)
@@ -135,15 +133,16 @@ let calculate_force_on_body (target_body : Body.t) tree =
       then
         for child_idx = 0 to 7 do
           let child_morton =
+            let open Unsigned.UInt64.Infix in
             { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor child_idx land Int128.mask_63
+            ; low = (morton.low lsl 3) lor Unsigned.UInt64.of_int child_idx
             }
           in
           traverse_tree child_morton (level - 1)
         done
   in
   (* Start traversal from root level *)
-  traverse_tree Int128.zero Morton126.bits_per_dimension;
+  traverse_tree Int128.zero Morton128.bits_per_dimension;
   !total_force
 ;;
 

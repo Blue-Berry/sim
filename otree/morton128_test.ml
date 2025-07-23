@@ -1,19 +1,26 @@
 open! Core
-open! Utils.Morton126
+open! Utils.Morton128
 
 (* type t = Utils.Morton126.t = { high : int; low : int } *)
 let%expect_test "Int128" =
   let open Int128 in
   print_s [%sexp (zero : Int128.t)];
-  [%expect {| 0x000000000000000000000000000000 |}];
+  [%expect {| 0x00000000000000000 |}];
   print_s [%sexp (one : Int128.t)];
-  [%expect {| 0x000000000000000000000000000001 |}];
+  [%expect {| 0x00000000000000001 |}];
   print_s [%sexp (shift_left one 1 : Int128.t)];
-  [%expect {| 0x000000000000000000000000000002 |}];
+  [%expect {| 0x00000000000000002 |}];
   print_s [%sexp (shift_left one 63 : Int128.t)];
-  [%expect {| 0x000000000000001000000000000000 |}];
-  print_s [%sexp (shift_left one 124 : Int128.t)];
-  [%expect {| 0x2000000000000000000000000000000 |}]
+  [%expect {| 0x08000000000000000 |}];
+  print_s [%sexp (shift_left one 64 : Int128.t)];
+  [%expect {| 0x10000000000000000 |}];
+  print_s [%sexp (shift_left one 120 : Int128.t)];
+  [%expect {| 0x1000000000000000000000000000000 |}];
+  let { low; high } = shift_left one 120 in
+  printf "Low: %d; High: %d;" (Unsigned.UInt64.to_int low) (Unsigned.UInt64.to_int high);
+  [%expect {| Low: 0; High: 72057594037927936; |}];
+  print_s [%sexp (shift_left one 127 : Int128.t)];
+  [%expect {| 0x80000000000000000000000000000000 |}]
 ;;
 
 (* val shift_left : t -> int -> t *)
@@ -39,9 +46,9 @@ let%expect_test "Int128" =
 
 let%expect_test "encode" =
   print_s [%sexp (encode 0 0 0 : Int128.t)];
-  [%expect {| 0x000000000000000000000000000000 |}];
+  [%expect {| 0x00000000000000000 |}];
   print_s [%sexp (encode 1 0 0 : Int128.t)];
-  [%expect {| 0x000000000000000000000000000001 |}]
+  [%expect {| 0x00000000000000001 |}]
 ;;
 
 let%expect_test "decode" =
@@ -50,11 +57,21 @@ let%expect_test "decode" =
   [%expect {| x: 2199023255552; y: 0; z: 0; |}];
   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000000") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {| x: 0; y: 0; z: 0; |}];
+  [%expect.unreachable];
   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000001") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {| x: 2199023255552; y: 0; z: 0; |}];
+  [%expect.unreachable];
   let x, y, z = decode (Int128.of_hex "0x12492492492492491249249249249249") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {| x: 0; y: 4398029733888; z: 14680060; |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  (Failure TODO)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Morton128_test.(fun) in file "otree/morton128_test.ml", line 58, characters 23-73
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
 ;;

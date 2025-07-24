@@ -117,11 +117,6 @@ let%expect_test "decode" =
   [%expect {| x: ffffffffff; y: ffffffffff; z: ffffffffff; |}]
 ;;
 
-(* val point_to_grid *)
-(*   :  Physics.point *)
-(*   -> Bb.t *)
-(*   -> Unsigned.uint64 * Unsigned.uint64 * Unsigned.uint64 *)
-
 let%expect_test "morton point" =
   let open Unsigned in
   let print_point (x, y, z) =
@@ -132,35 +127,41 @@ let%expect_test "morton point" =
       (to_hexstring y)
       (to_hexstring z)
   in
-  let point1 = Physics.point 0. 0. 0. in
+  let point1 = Physics.point (-100.) (-100.) (-100.) in
   let point2 = Physics.point 100. 100. 100. in
   let point3 = Physics.point 0. 0. 100. in
   let point4 = Physics.point 0. 100. 0. in
   let point5 = Physics.point 100. 0. 0. in
   let bb =
     Utils.Bb.
-      { x_min = 0.; x_max = 100.; y_min = 0.; y_max = 100.; z_min = 0.; z_max = 100. }
+      { x_min = -100.
+      ; x_max = 100.
+      ; y_min = -100.
+      ; y_max = 100.
+      ; z_min = -100.
+      ; z_max = 100.
+      }
   in
   point_to_grid point1 bb |> print_point;
   [%expect {| x: 0; y: 0; z: 0; |}];
   point_to_grid point2 bb |> print_point;
   [%expect {| x: 3ffffffffff; y: 3ffffffffff; z: 3ffffffffff; |}];
   point_to_grid point3 bb |> print_point;
-  [%expect {| x: 0; y: 0; z: 3ffffffffff; |}];
+  [%expect {| x: 1ffffffffff; y: 1ffffffffff; z: 3ffffffffff; |}];
   point_to_grid point4 bb |> print_point;
-  [%expect {| x: 0; y: 3ffffffffff; z: 0; |}];
+  [%expect {| x: 1ffffffffff; y: 3ffffffffff; z: 1ffffffffff; |}];
   point_to_grid point5 bb |> print_point;
-  [%expect {| x: 3ffffffffff; y: 0; z: 0; |}];
+  [%expect {| x: 3ffffffffff; y: 1ffffffffff; z: 1ffffffffff; |}];
   print_s [%sexp (encode_point point1 bb : Int128.t)];
   [%expect {| 0x00000000000000000 |}];
   print_s [%sexp (encode_point point2 bb : Int128.t)];
   [%expect {| 0x3fffffffffffffffffffffffffffffff |}];
   print_s [%sexp (encode_point point3 bb : Int128.t)];
-  [%expect {| 0x24924924924924924924924924924924 |}];
+  [%expect {| 0x27ffffffffffffffffffffffffffffff |}];
   print_s [%sexp (encode_point point4 bb : Int128.t)];
-  [%expect {| 0x12492492492492492492492492492492 |}];
+  [%expect {| 0x17ffffffffffffffffffffffffffffff |}];
   print_s [%sexp (encode_point point5 bb : Int128.t)];
-  [%expect {| 0x9249249249249249249249249249249 |}]
+  [%expect {| 0xfffffffffffffffffffffffffffffff |}]
 ;;
 
 let%expect_test "levels and parents" =

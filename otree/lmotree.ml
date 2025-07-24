@@ -54,27 +54,54 @@ let insert_bodies bodies tree =
   List.fold bodies ~init:tree ~f:(fun acc particle -> insert_body particle acc)
 ;;
 
-(* Build aggregates ONCE after all bodies are inserted *)
 let build_aggregates tree =
+  (* Use the same MortonMap that the tree uses *)
   let regions = ref MortonMap.empty in
+  (* Calculate meaningful depth by finding the maximum Morton code *)
+  let max_morton =
+    Map.fold tree.bodies ~init:Int128.zero ~f:(fun ~key:morton ~data:_ acc ->
+      if Int128.compare morton acc > 0 then morton else acc)
+  in
+  (* Calculate depth: how many 3-bit levels until we reach zero *)
+  let meaningful_depth =
+    let rec count_levels morton level =
+      if Int128.equal morton Int128.zero
+      then level - 1
+      else count_levels (Int128.shift_right_logical morton 3) (level + 1)
+    in
+    max 1 (count_levels max_morton 1)
+  in
   (* First pass: collect all bodies by their parent regions at each level *)
   Map.iteri tree.bodies ~f:(fun ~key:morton ~data:bodies ->
     List.iter bodies ~f:(fun body ->
-      (* Update all levels from leaf to root *)
-      for level = 1 to Morton128.bits_per_dimension do
+      (* Track which regions we've already added this body to *)
+      let seen_regions = ref Set.Poly.empty in
+      for level = 1 to meaningful_depth do
         let region_morton = Morton128.morton_at_level morton level in
-        let existing = Map.find !regions region_morton |> Option.value ~default:[] in
-        regions := Map.set !regions ~key:region_morton ~data:(body :: existing)
+        (* Only add if we haven't seen this region for this body *)
+        if not (Set.mem !seen_regions region_morton)
+        then (
+          seen_regions := Set.add !seen_regions region_morton;
+          (* Get existing data for this region (bodies and level) *)
+          let existing =
+            Map.find !regions region_morton |> Option.value ~default:([], level)
+          in
+          let existing_bodies, stored_level = existing in
+          (* Keep the minimum level (closest to root) *)
+          let final_level = min level stored_level in
+          regions
+          := Map.set
+               !regions
+               ~key:region_morton
+               ~data:(body :: existing_bodies, final_level))
       done));
   (* Second pass: calculate aggregate data for each region *)
   let final_regions =
-    Map.mapi !regions ~f:(fun ~key:region_morton ~data:bodies ->
+    Map.mapi !regions ~f:(fun ~key:_ ~data:(bodies, level) ->
       let centroid = List.fold bodies ~init:C.empty ~f:(fun acc p -> C.add acc p) in
-      let level = Morton128.bits_per_dimension - (Int128.popcount region_morton / 3) in
       { centroid
       ; bodies = List.length bodies
-      ; size =
-          region_size tree.bounds ~level ~bits_per_dimension:Morton128.bits_per_dimension
+      ; size = region_size tree.bounds ~level ~bits_per_dimension:meaningful_depth
       })
   in
   { tree with regions = final_regions }

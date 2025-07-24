@@ -33,7 +33,9 @@ let gravity_simulation_example () =
   (* THEN: Build all aggregates once (single pass) *)
   let tree_with_aggregates = build_aggregates tree_with_bodies in
   print_s [%sexp (tree_with_aggregates : Lmotree.t)];
-  (* let forces = calculate_all_forces tree_with_aggregates bodies in *)
+  let forces = calculate_all_forces tree_with_aggregates bodies in
+  List.iter forces ~f:(fun (b, f) ->
+    Format.printf "Body: %a; Force: %a\n" Body.pp b Physics.pp f);
   (* update_simulation forces 0.01; *)
   Printf.printf "Efficient gravity simulation:\n";
   Printf.printf "1. Batch inserted %d bodies (O(N))\n" (List.length bodies);
@@ -398,6 +400,18 @@ let%expect_test "example" =
       ((x_min -1000) (x_max 1000) (y_min -1000) (y_max 1000) (z_min -1000)
        (z_max 1000)))
      (theta 0.5))
+    Body: M: 1000.00
+    P: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00
+    V: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00
+    ; Force: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00
+    Body: M: 1000.00
+    P: x: 1.0000e+02 y: 0.0000e+00 z: 0.0000e+00
+    V: x: 0.0000e+00 y: 1.0000e+01 z: 0.0000e+00
+    ; Force: x: -9.3440e-11 y: 0.0000e+00 z: 0.0000e+00
+    Body: M: 1000.00
+    P: x: -1.0000e+02 y: 0.0000e+00 z: 0.0000e+00
+    V: x: 0.0000e+00 y: -1.0000e+01 z: 0.0000e+00
+    ; Force: x: 9.1771e-11 y: 0.0000e+00 z: 0.0000e+00
     Efficient gravity simulation:
     1. Batch inserted 3 bodies (O(N))
     2. Built aggregates once (O(N))

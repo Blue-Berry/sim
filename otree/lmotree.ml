@@ -117,59 +117,63 @@ let[@inline] distance (p1 : Physics.vec) (p2 : Physics.vec) =
 let calculate_force_on_body (target_body : Body.t) tree =
   let total_force = ref (Physics.vec 0. 0. 0.) in
   let rec traverse_tree morton level =
+    (* Stop if we've gone too deep to prevent infinite loops *)
+    if level < 0 then () else
     (* Try to find aggregate data at this level *)
     match Map.find tree.regions morton with
     | Some region_data ->
       let dist = distance target_body.pos region_data.centroid.p in
-      let ratio = region_data.size /. dist in
-      (* Barnes-Hut criterion: if s/d < θ, use approximation *)
-      if Float.(ratio < tree.theta)
-      then (
-        (* Use aggregate mass - treat whole region as single body *)
-        let force_vec =
-          Physics.acc_on target_body.pos region_data.centroid.p region_data.centroid.m
-        in
-        total_force := Owl.Mat.(!total_force + force_vec))
-      else if level = 0 (* Region too close - need to go deeper *)
-      then (
-        (* At leaf level - calculate individual body forces *)
-        match Map.find tree.bodies morton with
-        | Some bodies ->
-          List.iter bodies ~f:(fun body ->
-            if not (Physics.close_enough target_body.pos body.p)
-            then (
-              let force_vec = Physics.acc_on target_body.pos body.p body.m in
-              total_force := Owl.Mat.(!total_force + force_vec)))
-        | None -> ())
-      else
-        for
-          (* Go to child level - examine 8 children *)
-          child_idx = 0 to 7
-        do
-          let child_morton =
-            let open Unsigned.UInt64.Infix in
-            { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor Unsigned.UInt64.of_int child_idx
-            }
+      (* Avoid division by zero *)
+      if Float.(dist > 1e-10) then (
+        let ratio = region_data.size /. dist in
+        (* Barnes-Hut criterion: if s/d < θ, use approximation *)
+        if Float.(ratio < tree.theta)
+        then (
+          (* Use aggregate mass - treat whole region as single body *)
+          let force_vec =
+            Physics.acc_on target_body.pos region_data.centroid.p region_data.centroid.m
           in
-          traverse_tree child_morton (level - 1)
-        done
+          total_force := Owl.Mat.(!total_force + force_vec))
+        else if level = 0 (* Region too close - need to go deeper *)
+        then (
+          (* At leaf level - calculate individual body forces *)
+          match Map.find tree.bodies morton with
+          | Some bodies ->
+            List.iter bodies ~f:(fun body ->
+              if not (Physics.close_enough target_body.pos body.p)
+              then (
+                let force_vec = Physics.acc_on target_body.pos body.p body.m in
+                total_force := Owl.Mat.(!total_force + force_vec)))
+          | None -> ())
+        else
+          (* Only traverse children that might have data *)
+          for child_idx = 0 to 7 do
+            let child_morton =
+              let open Unsigned.UInt64.Infix in
+              { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
+              ; low = (morton.low lsl 3) lor Unsigned.UInt64.of_int child_idx
+              }
+            in
+            (* Only traverse if there's a chance of finding data *)
+            if Map.mem tree.regions child_morton || Map.mem tree.bodies child_morton
+            then traverse_tree child_morton (level - 1)
+          done
+      )
     | None ->
-      (* No data at this level, try going to leaf level *)
-      if level > 0
-      then
-        for child_idx = 0 to 7 do
-          let child_morton =
-            let open Unsigned.UInt64.Infix in
-            { Int128.high = (morton.high lsl 3) lor (morton.low lsr 60)
-            ; low = (morton.low lsl 3) lor Unsigned.UInt64.of_int child_idx
-            }
-          in
-          traverse_tree child_morton (level - 1)
-        done
+      (* No region data at this level - check if there are bodies directly *)
+      (match Map.find tree.bodies morton with
+      | Some bodies ->
+        List.iter bodies ~f:(fun body ->
+          if not (Physics.close_enough target_body.pos body.p)
+          then (
+            let force_vec = Physics.acc_on target_body.pos body.p body.m in
+            total_force := Owl.Mat.(!total_force + force_vec)))
+      | None -> 
+        (* No data here at all - don't traverse children unnecessarily *)
+        ())
   in
-  (* Start traversal from root level *)
-  traverse_tree Int128.zero Morton128.bits_per_dimension;
+  (* Start traversal from root level with reasonable depth *)
+  traverse_tree Int128.zero (min Morton128.bits_per_dimension 15);
   !total_force
 ;;
 

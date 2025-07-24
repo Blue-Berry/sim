@@ -181,15 +181,49 @@ let decode morton =
   UInt64.(extract_bits morton bits_per_dimension zero zero zero)
 ;;
 
+let uint64_of_float f =
+  let open Float in
+  if f < 0.0
+  then UInt64.zero
+  else if f < Float.int_pow 2.0 63
+  then UInt64.of_int64 (Int64.of_float f)
+  else (
+    (* For floats >= 2^63, subtract 2^63, convert remainder, then add 2^63 back *)
+    let f' = f -. Float.int_pow 2.0 63 in
+    let remainder = UInt64.of_int64 (Int64.of_float f') in
+    let two_to_63 = UInt64.shift_left UInt64.one 63 in
+    UInt64.Infix.(two_to_63 + remainder))
+;;
+
+let float_of_uint64 u =
+  let two_to_63 = UInt64.shift_left UInt64.one 63 in
+  if UInt64.compare u two_to_63 < 0
+  then
+    (* Value < 2^63, can convert via Int64 *)
+    Int64.to_float (UInt64.to_int64 u)
+  else (
+    (* Value >= 2^63, need to handle the high bit *)
+    let remainder = UInt64.Infix.(u - two_to_63) in
+    let remainder_float = Int64.to_float (UInt64.to_int64 remainder) in
+    remainder_float +. Float.int_pow 2.0 63)
+;;
+
 let point_to_grid (p : Physics.point) (bounds : Bb.t) =
   let open Physics in
-  let max_coord = (1 lsl bits_per_dimension) - 1 in
+  let open UInt64 in
+  let max_coord = Infix.((one lsl bits_per_dimension) - one) in
   let x_norm = (p.%{`x} -. bounds.x_min) /. (bounds.x_max -. bounds.x_min) in
   let y_norm = (p.%{`y} -. bounds.y_min) /. (bounds.y_max -. bounds.y_min) in
   let z_norm = (p.%{`z} -. bounds.z_min) /. (bounds.z_max -. bounds.z_min) in
-  let x_grid = max 0 (min max_coord (int_of_float (x_norm *. float max_coord))) in
-  let y_grid = max 0 (min max_coord (int_of_float (y_norm *. float max_coord))) in
-  let z_grid = max 0 (min max_coord (int_of_float (z_norm *. float max_coord))) in
+  let x_grid =
+    max zero (min max_coord (uint64_of_float (x_norm *. float_of_uint64 max_coord)))
+  in
+  let y_grid =
+    max zero (min max_coord (uint64_of_float (y_norm *. float_of_uint64 max_coord)))
+  in
+  let z_grid =
+    max zero (min max_coord (uint64_of_float (z_norm *. float_of_uint64 max_coord)))
+  in
   x_grid, y_grid, z_grid
 ;;
 

@@ -1,4 +1,3 @@
-
 (library
  (name utils)
  (modules bb morton128 centroid)
@@ -20,7 +19,6 @@
  (preprocess
   (pps ppx_jane)))
 
-
 (library
  (name otree_test)
  (modules otree_test)
@@ -29,7 +27,6 @@
  (preprocess
   (pps ppx_jane)))
 
-
 (library
  (name lmotree_test)
  (modules lmotree_test)
@@ -37,9 +34,6 @@
  (inline_tests)
  (preprocess
   (pps ppx_jane)))
-
-
-
 
 (library
  (name morton128_test)

@@ -76,7 +76,8 @@ let%expect_test "encode" =
 let%expect_test "decode" =
   let x, y, z = decode Int128.one in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x00000000000000001
     x: 1; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -207,7 +208,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000000") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x00000000000000000
     x: 0; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -338,7 +340,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000001") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x00000000000000001
     x: 1; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -469,7 +472,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode (Int128.of_hex "0x000000000000000000000000000007") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x00000000000000007
     x: 1; y: 1; z: 1;
     ACC: x: 0; y: 0; z: 0;
@@ -600,7 +604,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode (Int128.of_hex "0x00000000000000ffffffffffffffff") in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x0ffffffffffffffff
     x: 1; y: 1; z: 1;
     ACC: x: 0; y: 0; z: 0;
@@ -731,7 +736,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode Int128.(shift_left one 63) in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x08000000000000000
     x: 0; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -862,7 +868,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode Int128.(shift_left one 64) in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x10000000000000000
     x: 0; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -993,7 +1000,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode Int128.(shift_left one 120) in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x1000000000000000000000000000000
     x: 0; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;
@@ -1124,7 +1132,8 @@ let%expect_test "decode" =
     |}];
   let x, y, z = decode Int128.(shift_left one 127) in
   Printf.printf "x: %d; y: %d; z: %d;" x y z;
-  [%expect {|
+  [%expect
+    {|
     0x80000000000000000000000000000000
     x: 0; y: 0; z: 0;
     ACC: x: 0; y: 0; z: 0;

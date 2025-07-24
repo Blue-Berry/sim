@@ -45,7 +45,8 @@ let gravity_simulation_example () =
 let%expect_test "example" =
   let _ = gravity_simulation_example () in
   ();
-  [%expect {|
+  [%expect
+    {|
     ((bodies
       ((0x7ff6ff6ff6ff6ff6ff6ff6ff6ff6ff6
         (((p ((x -100) (y 0) (z 0))) (m 1000))))

@@ -147,6 +147,7 @@ let encode (x : uint64) (y : uint64) (z : uint64) =
 ;;
 
 let decode morton =
+  assert (Int128.compare morton Int128.(shift_left one (42 * 3)) < 0);
   let rec extract_bits morton depth x_acc y_acc z_acc =
     if depth = 0
     then x_acc, y_acc, z_acc
@@ -169,8 +170,16 @@ let decode morton =
         else zero
       in
       (* print_endline (Int128.to_hex morton); *)
-      (* printf "x: %d; y: %d; z: %d;\n" bit_x bit_y bit_z; *)
-      (* printf "ACC: x: %d; y: %d; z: %d;\n" x_acc y_acc z_acc; *)
+      (* printf *)
+      (*   "x: %s; y: %s; z: %s;\n" *)
+      (*   (to_string bit_x) *)
+      (*   (to_string bit_y) *)
+      (*   (to_string bit_z); *)
+      (* printf *)
+      (*   "ACC: x: %s; y: %s; z: %s;\n" *)
+      (*   (to_string x_acc) *)
+      (*   (to_string y_acc) *)
+      (*   (to_string z_acc); *)
       extract_bits
         (Int128.shift_right_logical morton 3)
         Int.(depth - 1)

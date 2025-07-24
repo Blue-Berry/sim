@@ -114,6 +114,8 @@ let%expect_test "decode" =
   [%expect {| x: 0; y: 0; z: 200000; |}];
   decode Int128.(shift_left one 120) |> print_point;
   [%expect {| x: 10000000000; y: 0; z: 0; |}];
-  decode Int128.(shift_left one 127) |> print_point;
-  [%expect {| x: 0; y: 0; z: 0; |}]
+  decode Int128.(shift_left one ((42 * 3) - 1)) |> print_point;
+  [%expect {| x: 0; y: 0; z: 20000000000; |}];
+  decode (Int128.of_hex "0xffffffffffffffffffffffffffffff") |> print_point;
+  [%expect {| x: ffffffffff; y: ffffffffff; z: ffffffffff; |}]
 ;;

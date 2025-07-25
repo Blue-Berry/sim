@@ -26,3 +26,4 @@ val octant_of_point : Body.Physics.point -> t -> octant
 val octant_bb : t -> octant -> t
 val parent_bb : t -> octant -> t
 val int_of_octant : octant -> int
+val octant_of_int : int -> octant

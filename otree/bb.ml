@@ -35,6 +35,19 @@ let int_of_octant (o : octant) : int =
   | O8 -> 7
 ;;
 
+let octant_of_int (i : int) : octant =
+  match i with
+  | 0 -> O1
+  | 1 -> O2
+  | 2 -> O3
+  | 3 -> O4
+  | 4 -> O5
+  | 5 -> O6
+  | 6 -> O7
+  | 7 -> O8
+  | _ -> failwith "Invalid octant index"
+;;
+
 let octant_of_point (p : Body.Physics.point) (bb : t) : octant =
   let open Body.Physics in
   let open Float in

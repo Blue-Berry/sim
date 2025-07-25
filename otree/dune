@@ -1,6 +1,6 @@
 (library
  (name utils)
- (modules bb morton128 centroid)
+ (modules bb centroid)
  (libraries owl body core)
  (preprocess
   (pps ppx_jane)))
@@ -13,32 +13,9 @@
   (pps ppx_jane)))
 
 (library
- (name lmotree)
- (modules lmotree)
- (libraries owl body core utils)
- (preprocess
-  (pps ppx_jane)))
-
-(library
  (name otree_test)
  (modules otree_test)
  (libraries otree core)
- (inline_tests)
- (preprocess
-  (pps ppx_jane)))
-
-(library
- (name lmotree_test)
- (modules lmotree_test)
- (libraries lmotree core utils)
- (inline_tests)
- (preprocess
-  (pps ppx_jane)))
-
-(library
- (name morton128_test)
- (modules morton128_test)
- (libraries core utils)
  (inline_tests)
  (preprocess
   (pps ppx_jane)))

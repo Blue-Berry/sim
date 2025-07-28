@@ -1,3 +1,5 @@
 (executable
  (name bench)
- (libraries core_bench otree))
+ (libraries core core_bench body otree)
+ (preprocess
+  (pps ppx_jane)))

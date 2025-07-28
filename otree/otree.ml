@@ -54,7 +54,7 @@ let has_children
       i
   =
   let open Int32 in
-  List.init 8 ~f:(fun j -> arr.{i, j} > zero)
+  List.init 8 ~f:(fun j -> arr.{i, j} > zero) (*TODO: This closure is allocated *)
   |> List.fold ~init:false ~f:(fun acc x -> acc || x)
 ;;
 
@@ -80,15 +80,17 @@ let get_centroid (tree : tree) (node_index : int) : C.t =
 let grow_tree (tree : tree) : unit =
   let old_capacity = tree.capacity in
   let new_capacity = old_capacity * 2 in
-  let new_mass_xyz = Bigarray.Array2.init Float32 C_layout new_capacity 3 (fun _ _ -> 0.) in
+  let new_mass_xyz =
+    Bigarray.Array2.init Float32 C_layout new_capacity 3 (fun _ _ -> 0.)
+  in
   let new_mass = Bigarray.Array1.init Float32 C_layout new_capacity (fun _ -> 0.) in
-  let new_children = Bigarray.Array2.init Int32 C_layout new_capacity 8 (fun _ _ -> Int32.zero) in
-  
+  let new_children =
+    Bigarray.Array2.init Int32 C_layout new_capacity 8 (fun _ _ -> Int32.zero)
+  in
   Bigarray.(
     Array2.blit tree.mass_xyz (Array2.sub_left new_mass_xyz 0 old_capacity);
     Array2.blit tree.children (Array2.sub_left new_children 0 old_capacity);
     Array1.blit tree.mass (Array1.sub new_mass 0 old_capacity));
-  
   tree.capacity <- new_capacity;
   tree.mass_xyz <- new_mass_xyz;
   tree.mass <- new_mass;
@@ -118,7 +120,11 @@ let insert_body (tree : tree) (c : C.t) (bb : Bb.t) : unit =
         let leaf_index = append_leaf tree c' in
         tree.children.{node_index, Bb.(octant_of_point c'.p bb |> int_of_octant)}
         <- Int32.of_int_exn leaf_index;
-        insert node_index bb)
+        (* Now insert the new centroid *)
+        let octant = Bb.octant_of_point c.p bb in
+        let octant_idx = Bb.int_of_octant octant in
+        let leaf_index = append_leaf tree c in
+        tree.children.{node_index, octant_idx} <- Int32.of_int_exn leaf_index)
     | true (* internal *) ->
       update_centroid tree node_index (C.add c (get_centroid tree node_index));
       let octant = Bb.octant_of_point c.p bb in
@@ -153,52 +159,50 @@ let calculate_force_on_body (target_body : Body.t) (tree : tree) (bb : Bb.t) =
   let total_force = ref (Physics.vec 0. 0. 0.) in
   let work_queue = Queue.create () in
   Queue.enqueue work_queue (0, bb);
-  
   let rec process_queue () =
     match Queue.dequeue work_queue with
     | None -> ()
     | Some (node_index, node_bb) ->
-        if node_index >= tree.size then
-          process_queue ()
-        else (
-          let centroid = get_centroid tree node_index in
-          (* Skip if centroid has no mass *)
-          if Float.(centroid.m > 0.) then (
-            let dist = distance target_body.pos centroid.p in
-            (* Avoid division by zero and self-interaction *)
-            if Float.(dist > 1e-10) && not (Physics.close_enough target_body.pos centroid.p) then (
-              let node_size = bb_size node_bb in
-              let ratio = node_size /. dist in
-              
-              match has_children tree.children node_index with
-              | false (* leaf *) ->
-                  (* For leaf nodes, always calculate direct force *)
-                  let force_vec = Physics.acc_on target_body.pos centroid.p centroid.m in
-                  total_force := Owl.Mat.(!total_force + force_vec);
-                  process_queue ()
-              | true (* internal *) ->
-                  (* Barnes-Hut criterion: if s/d < θ, use approximation *)
-                  if Float.(ratio < tree.theta) then (
-                    (* Use aggregate mass - treat whole region as single body *)
-                    let force_vec = Physics.acc_on target_body.pos centroid.p centroid.m in
-                    total_force := Owl.Mat.(!total_force + force_vec);
-                    process_queue ()
-                  ) else (
-                    (* Too close - need to traverse children *)
-                    for child_idx = 0 to 7 do
-                      let child_node_index = tree.children.{node_index, child_idx} in
-                      if Int32.(child_node_index > zero) then
-                        let child_octant = Bb.octant_of_int child_idx in
-                        let child_bb = Bb.octant_bb node_bb child_octant in
-                        Queue.enqueue work_queue (Int32.to_int_exn child_node_index, child_bb)
-                    done;
-                    process_queue ()
-                  )
-            ) else 
+      if node_index >= tree.size
+      then process_queue ()
+      else (
+        let centroid = get_centroid tree node_index in
+        (* Skip if centroid has no mass *)
+        if Float.(centroid.m > 0.)
+        then (
+          let dist = distance target_body.pos centroid.p in
+          (* Avoid division by zero and self-interaction *)
+          if Float.(dist > 1e-10) && not (Physics.close_enough target_body.pos centroid.p)
+          then (
+            let node_size = bb_size node_bb in
+            let ratio = node_size /. dist in
+            match has_children tree.children node_index with
+            | false (* leaf *) ->
+              (* For leaf nodes, always calculate direct force *)
+              let force_vec = Physics.acc_on target_body.pos centroid.p centroid.m in
+              (total_force := Owl.Mat.(!total_force + force_vec));
               process_queue ()
-          ) else
-            process_queue ()
-        )
+            | true (* internal *) ->
+              (* Barnes-Hut criterion: if s/d < θ, use approximation *)
+              if Float.(ratio < tree.theta)
+              then (
+                (* Use aggregate mass - treat whole region as single body *)
+                let force_vec = Physics.acc_on target_body.pos centroid.p centroid.m in
+                (total_force := Owl.Mat.(!total_force + force_vec));
+                process_queue ())
+              else (
+                (* Too close - need to traverse children *)
+                for child_idx = 0 to 7 do
+                  let child_node_index = tree.children.{node_index, child_idx} in
+                  if Int32.(child_node_index > zero)
+                  then (
+                    let child_octant = Bb.octant_of_int child_idx in
+                    let child_bb = Bb.octant_bb node_bb child_octant in
+                    Queue.enqueue work_queue (Int32.to_int_exn child_node_index, child_bb))
+                done;
+                process_queue ()))
+          else process_queue ())
+        else process_queue ())
   in
   process_queue ();
   !total_force

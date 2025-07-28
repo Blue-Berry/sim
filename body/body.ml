@@ -15,7 +15,7 @@ module Physics = struct
     | `z -> Mat.( .%{} ) x (0, 2)
   ;;
 
-  let point (a : float) (b : float) (c : float) : point =
+  let[@inline] point (a : float) (b : float) (c : float) : point =
     let v1 = vector 3 in
     v1.%{0, 0} <- a;
     v1.%{0, 1} <- b;

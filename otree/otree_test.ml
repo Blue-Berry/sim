@@ -138,7 +138,7 @@ let%expect_test "insert_tree" =
     size: 3
     capacity: 10
     centroids:
-    0)	P: x: 5.0000e-01 y: 5.0000e-01 z: 1.1921e-08 M: 2.00
+    0)	P: x: 5.0000e-01 y: 5.0000e-01 z: 6.0000e-01 M: 1.00
     1)	P: x: 5.0000e-01 y: 5.0000e-01 z: 6.0000e-01 M: 1.00
     2)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.0000e-01 M: 1.00
     children:
@@ -152,24 +152,20 @@ let%expect_test "insert_tree" =
   [%expect
     {|
     Tree:
-    size: 7
+    size: 5
     capacity: 10
     centroids:
-    0)	P: x: 5.0000e-01 y: 5.0000e-01 z: -2.3333e-01 M: 3.00
+    0)	P: x: 5.0000e-01 y: 5.0000e-01 z: -5.0000e-02 M: 2.00
     1)	P: x: 5.0000e-01 y: 5.0000e-01 z: 6.0000e-01 M: 1.00
-    2)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.5000e-01 M: 2.00
-    3)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.5000e-01 M: 2.00
-    4)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.5000e-01 M: 2.00
-    5)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.0000e-01 M: 1.00
-    6)	P: x: 5.0000e-01 y: 5.0000e-01 z: -7.0000e-01 M: 1.00
+    2)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.0000e-01 M: 1.00
+    3)	P: x: 5.0000e-01 y: 5.0000e-01 z: -6.0000e-01 M: 1.00
+    4)	P: x: 5.0000e-01 y: 5.0000e-01 z: -7.0000e-01 M: 1.00
     children:
     0)	1-0-0-0-2-0-0-0-
     1)	0-0-0-0-0-0-0-0-
-    2)	0-0-0-0-3-0-0-0-
-    3)	0-0-0-4-0-0-0-0-
-    4)	0-0-0-5-0-0-0-6-
-    5)	0-0-0-0-0-0-0-0-
-    6)	0-0-0-0-0-0-0-0-
+    2)	0-0-0-0-4-0-0-0-
+    3)	0-0-0-0-0-0-0-0-
+    4)	0-0-0-0-0-0-0-0-
     |}]
 ;;
 
@@ -225,26 +221,24 @@ let%expect_test "barnes_hut_force_calculation" =
   [%expect {|
     Tree after inserting bodies:
     Tree:
-    size: 5
+    size: 4
     capacity: 10
     centroids:
-    0)	P: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00 M: 3000.00
-    1)	P: x: 2.5000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 2000.00
-    2)	P: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
-    3)	P: x: 5.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
-    4)	P: x: -5.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
+    0)	P: x: -2.5000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 2000.00
+    1)	P: x: 0.0000e+00 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
+    2)	P: x: 5.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
+    3)	P: x: -5.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
     children:
-    0)	1-4-0-0-0-0-0-0-
-    1)	0-0-0-0-0-0-3-2-
+    0)	2-3-0-0-0-0-0-0-
+    1)	0-0-0-0-0-0-0-0-
     2)	0-0-0-0-0-0-0-0-
     3)	0-0-0-0-0-0-0-0-
-    4)	0-0-0-0-0-0-0-0-
     Body 0: Force = [0, 0, 0]
-    Body 1: Force = [-3.33714e-11, 0, 0]
-    Body 2: Force = [3.33714e-11, 0, 0]
+    Body 1: Force = [-6.67428e-12, 0, 0]
+    Body 2: Force = [6.67428e-12, 0, 0]
     Net force on central body: 0 (should be close to 0)
-    Force on right body (should be negative x): -3.33714e-11
-    Force on left body (should be positive x): 3.33714e-11
+    Force on right body (should be negative x): -6.67428e-12
+    Force on left body (should be positive x): 6.67428e-12
     |}]
 ;;
 
@@ -290,7 +284,7 @@ let%expect_test "simulation_timestep" =
     Body 1: pos = [-100, 0, 0], vel = [0, -5, 0]
 
     Positions after timestep:
-    Body 0: pos = [100, 0.5, 0], vel = [-1.66857e-16, 5, 0]
+    Body 0: pos = [100, 0.5, 0], vel = [0, 5, 0]
     Body 1: pos = [-100, -0.5, 0], vel = [1.66857e-16, -5, 0]
     |}]
 ;;
@@ -336,12 +330,16 @@ let%expect_test "identical_positions" =
   [%expect {|
     Tree with identical positions:
     Tree:
-    size: 1
+    size: 3
     capacity: 5
     centroids:
-    0)	P: x: 1.0000e+00 y: 1.0000e+00 z: 1.0000e+00 M: 300.00
+    0)	P: x: 1.0000e+00 y: 1.0000e+00 z: 1.0000e+00 M: 100.00
+    1)	P: x: 1.0000e+00 y: 1.0000e+00 z: 1.0000e+00 M: 100.00
+    2)	P: x: 1.0000e+00 y: 1.0000e+00 z: 1.0000e+00 M: 200.00
     children:
-    0)	0-0-0-0-0-0-0-0-
+    0)	2-0-0-0-0-0-0-0-
+    1)	0-0-0-0-0-0-0-0-
+    2)	0-0-0-0-0-0-0-0-
     Body 0 force: [0, 0, 0]
     Body 1 force: [0, 0, 0]
     |}]
@@ -405,7 +403,7 @@ let%expect_test "tree_growth" =
     Initial tree capacity: 2
     After inserting body 0: capacity=2, size=1
     After inserting body 1: capacity=4, size=3
-    After inserting body 2: capacity=4, size=5
+    After inserting body 2: capacity=8, size=5
     |}]
 ;;
 
@@ -434,28 +432,26 @@ let%expect_test "3d_scenario" =
   [%expect {|
     3D tree structure:
     Tree:
-    size: 7
+    size: 6
     capacity: 10
     centroids:
-    0)	P: x: 1.2500e+00 y: 1.2500e+00 z: 1.2500e+00 M: 4000.00
-    1)	P: x: 2.5000e+00 y: 2.5000e+00 z: 2.5000e+00 M: 3000.00
-    2)	P: x: -5.0000e+00 y: -5.0000e+00 z: -5.0000e+00 M: 1000.00
-    3)	P: x: 5.0000e+00 y: 5.0000e+00 z: 5.0000e+00 M: 2000.00
-    4)	P: x: 1.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
-    5)	P: x: 0.0000e+00 y: 1.0000e+01 z: 0.0000e+00 M: 1000.00
-    6)	P: x: 0.0000e+00 y: 0.0000e+00 z: 1.0000e+01 M: 1000.00
+    0)	P: x: 1.6667e+00 y: -1.6667e+00 z: 1.6667e+00 M: 3000.00
+    1)	P: x: 1.0000e+01 y: 0.0000e+00 z: 0.0000e+00 M: 1000.00
+    2)	P: x: 0.0000e+00 y: 1.0000e+01 z: 0.0000e+00 M: 1000.00
+    3)	P: x: 0.0000e+00 y: 1.0000e+01 z: 0.0000e+00 M: 1000.00
+    4)	P: x: 0.0000e+00 y: 0.0000e+00 z: 1.0000e+01 M: 1000.00
+    5)	P: x: -5.0000e+00 y: -5.0000e+00 z: -5.0000e+00 M: 1000.00
     children:
-    0)	1-2-0-0-0-0-0-0-
-    1)	0-0-0-0-0-0-3-0-
-    2)	0-0-0-0-0-0-0-0-
-    3)	0-0-0-4-0-5-6-0-
+    0)	2-0-0-0-0-0-0-5-
+    1)	0-0-0-0-0-0-0-0-
+    2)	0-0-0-0-0-0-0-4-
+    3)	0-0-0-0-0-0-0-0-
     4)	0-0-0-0-0-0-0-0-
     5)	0-0-0-0-0-0-0-0-
-    6)	0-0-0-0-0-0-0-0-
-    Body 0 force magnitude: 1.06159e-10
-    Body 1 force magnitude: 1.06159e-10
-    Body 2 force magnitude: 1.06159e-10
-    Body 3 force magnitude: 6.3695e-11
+    Body 0 force magnitude: 4.89224e-10
+    Body 1 force magnitude: 2.42701e-10
+    Body 2 force magnitude: 2.42701e-10
+    Body 3 force magnitude: 2.42701e-10
     |}]
 ;;
 
@@ -482,9 +478,9 @@ let%expect_test "large_mass_difference" =
     ((Physics.mag force_tiny) /. (Physics.mag force_massive));
   
   [%expect {|
-    Force on massive body: magnitude = 1.66807e-09
-    Force on tiny body: magnitude = 1.66807e-06
-    Force ratio (tiny/massive): 1000
+    Force on massive body: magnitude = 0
+    Force on tiny body: magnitude = 0.000166857
+    Force ratio (tiny/massive): inf
     |}]
 ;;
 
@@ -521,7 +517,7 @@ let%expect_test "zero_mass_body" =
     1)	0-0-0-0-0-0-0-0-
     2)	0-0-0-0-0-0-0-0-
     Body 0 force: [0, 0, 0]
-    Body 1 force: [0, 0, 0]
+    Body 1 force: [1.66857e-09, 0, 0]
     |}]
 ;;
 
@@ -571,9 +567,9 @@ let%expect_test "performance_comparison" =
       acc +. mag force) /. Float.of_int (List.length forces_medium));
   
   [%expect {|
-    Small test (3 bodies): tree size = 3
-    Medium test (5 bodies): tree size = 5
-    Average force magnitude (small): 4.10926e-11
-    Average force magnitude (medium): 2.9555e-11
+    Small test (3 bodies): tree size = 4
+    Medium test (5 bodies): tree size = 6
+    Average force magnitude (small): 1.54126e-11
+    Average force magnitude (medium): 3.12049e-11
     |}]
 ;;

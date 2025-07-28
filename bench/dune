@@ -1,0 +1,3 @@
+(executable
+ (name bench)
+ (libraries core_bench otree))
